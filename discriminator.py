@@ -10,7 +10,7 @@ class Block(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=KERNEL_SIZE, stride=stride, padding=PADDING, bias=True, padding_mode='reflect'),
             nn.InstanceNorm2d(out_channels),
-            nn.LeakyReLU(0.2)
+            nn.LeakyReLU(0.2, inplace=True)
         )
     
     def forward(self, x):
@@ -22,11 +22,10 @@ class Discriminator(nn.Module):
         super().__init__()
         self.initial = nn.Sequential(
             nn.Conv2d(in_channels, out_channels=features[0], kernel_size=KERNEL_SIZE, stride=2, padding=1, padding_mode='reflect'),
-            nn.LeakyReLU(0.2)
+            nn.LeakyReLU(0.2, inplace=True),
         )
 
         layers = []
-
         in_channels = features[0]
         for feature in features[1:]:
             layers.append(Block(in_channels, out_channels=feature, stride=1 if feature == features[-1] else 2))

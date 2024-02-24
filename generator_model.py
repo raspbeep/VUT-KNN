@@ -36,6 +36,7 @@ class Generator(nn.Module):
         # output (B, 9, img_size, img_size), 9=num features, number of output channels the convolution produces
         self.initial = nn.Sequential(
             nn.Conv2d(img_channels, num_features, kernel_size=7, stride=1, padding=3, padding_mode='reflect'),
+            nn.InstanceNorm2d(num_features),
             nn.ReLU(inplace=True)
         )
         # input (B, 9, img_size, img_size)
