@@ -3,6 +3,20 @@ from PIL import Image
 from torch.utils.data import Dataset
 import torchvision.transforms as t
 
+def add_white_background(image):
+    """
+    Converts an image with an alpha channel to RGB with a white background.
+    """
+    if image.mode in ("RGBA", "LA") or (image.mode == "P" and 'transparency' in image.info):
+        # Create a white background image
+        background = Image.new("RGB", image.size, (255, 255, 255))
+        # Paste the image on the background. 
+        background.paste(image, mask=image.split()[3])  # 3 is the alpha channel
+        return background
+    else:
+        return image
+
+
 class Class1Class2Dataset(Dataset):
     def __init__(self, root_c1, root_c2, transform=None):
         self.root_c1 = root_c1
@@ -23,11 +37,11 @@ class Class1Class2Dataset(Dataset):
     def __getitem__(self, index):
         class1_img = self.class1_images[index % self.class1_len]
         class1_path = os.path.join(self.root_c1, class1_img)
-        class1_img = np.array(Image.open(class1_path).convert('RGB'))
+        class1_img = np.array(add_white_background(Image.open(class1_path)).convert('RGB'))
         
         class2_img = self.class2_images[index % self.class2_len]
         class2_path = os.path.join(self.root_c2, class2_img)
-        class2_img = np.array(Image.open(class2_path).convert('RGB'))
+        class2_img = np.array(add_white_background(Image.open(class2_path)).convert('RGB'))
 
         if self.transform:
             augmentations = self.transform(image=class1_img, image0=class2_img)
