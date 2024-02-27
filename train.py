@@ -1,3 +1,5 @@
+import argparse
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -12,10 +14,12 @@ from generator_model import Generator
 from utils import load_checkpoint, save_checkpoint
 
 
-def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch):
+def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch, save_path='saved_images/'):
     H_reals = 0
     H_fakes = 0
     loop = tqdm(loader, leave=True)
+
+    print('saving to: ', save_path)
 
     for idx, (c1, c2) in enumerate(loop):
         c1 = c1.to(config.DEVICE)
@@ -82,17 +86,19 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
         g_scaler.update()
 
         if idx % 10 == 0:
-            # reals
-            save_image(c1 * 0.5 + 0.5, f'saved_images/c1_reals/epoch_{epoch}_idx_{idx}.png')
-            save_image(c2 * 0.5 + 0.5, f'saved_images/c2_reals/epoch_{epoch}_idx_{idx}.png')
-            # fakes
-            save_image(fake_c1 * 0.5 + 0.5, f'saved_images/c1_fakes/epoch_{epoch}_idx_{idx}.png')
-            save_image(fake_c2 * 0.5 + 0.5, f'saved_images/c2_fakes/epoch_{epoch}_idx_{idx}.png')
+            # reals horse
+            save_image(c1 * 0.5 + 0.5, save_path + f'epoch_{epoch}_idx_{idx}_horse_real.png')
+            # reals zebra
+            save_image(c2 * 0.5 + 0.5, save_path + f'epoch_{epoch}_idx_{idx}_zebra_real.png')
+            # fakes zebra
+            save_image(fake_c1 * 0.5 + 0.5, save_path + f'epoch_{epoch}_idx_{idx}_zebra_real.png')
+            # fakes horse
+            save_image(fake_c2 * 0.5 + 0.5, save_path + f'epoch_{epoch}_idx_{idx}_horse_fake.png')
 
         loop.set_postfix(H_real=H_reals / (idx + 1), H_fake=H_fakes / (idx + 1))
 
 
-def main():
+def main(save_path=None):
     disc_c1 = Discriminator(in_channels=3).to(config.DEVICE)
     disc_c2 = Discriminator(in_channels=3).to(config.DEVICE)
     gen_c2 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
@@ -177,7 +183,8 @@ def main():
             mse,
             d_scaler,
             g_scaler,
-            epoch
+            epoch,
+            save_path
         )
 
         if config.SAVE_MODEL:
@@ -188,4 +195,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="CGAN Training Script")
+    parser.add_argument('--save', type=str, default='./saved_images',)
+    
+    args = parser.parse_args()
+    
+    main(args.save)
+

@@ -2,18 +2,27 @@ import torch
 import albumentations as a
 from albumentations.pytorch import ToTensorV2
 
+printed = False
+
 def get_device():
+    global printed
     if torch.cuda.is_available():
-        print('[USING CUDA]')
+        if not printed:
+            print('[USING CUDA]')
+        printed = True
         return 'cuda'
     if torch.backends.mps.is_available():
-        print('[USING MPS]')
+        if not printed:
+            print('[USING MPS]')
+        printed = True
         return 'mps'
-    print('[USING CPU]')
+    if not printed:
+        print('[USING CPU]')
+    printed = True
     return 'cpu'
 
 
-DEVICE = get_device()
+DEVICE = get_device(printed)
 
 # directories
 DATA_DIR = 'data'

@@ -16,6 +16,8 @@ get job ID po submite alebo v interactive jobe
 gpu job
 `qsub -I -q gpu -l select=1:ncpus=1:ngpus=1:scratch_local=10gb -l walltime=24:0:0`
 
+
+
 *Terms*
 
 **feature map**
