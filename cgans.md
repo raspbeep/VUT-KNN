@@ -47,5 +47,3 @@ gpu job
 	   	- zvysuje dimenzie vystupu a zmensuje features
 		- dilation (upscaling)- vlozi nuly medzi hodnoty input feature maps
 		- aplikuje konvoluciu, interpoluje aby zvacsila obrazok
-
-

@@ -21,7 +21,6 @@ def get_device():
     printed = True
     return 'cpu'
 
-
 DEVICE = get_device()
 
 # directories
