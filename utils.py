@@ -4,7 +4,7 @@ import torch.nn as nn
 import config
 
 def save_checkpoint(model, optimizer, filename='my_checkpoint.pth.tar'):
-    print('=> sabing checkpoint')
+    print('=> saving checkpoint')
     checkpoint = {
         'state_dict': model.state_dict(),
         'optimizer': optimizer.state_dict()
