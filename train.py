@@ -14,7 +14,7 @@ from generator_model import Generator
 from utils import load_checkpoint, save_checkpoint
 
 
-def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch, save_path='saved_images/'):
+def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch, save_path):
     H_reals = 0
     H_fakes = 0
     loop = tqdm(loader, leave=True)
@@ -200,5 +200,5 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    main(args.save)
+    main(save_path=args.save)
 

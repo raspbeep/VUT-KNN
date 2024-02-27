@@ -22,7 +22,7 @@ def get_device():
     return 'cpu'
 
 
-DEVICE = get_device(printed)
+DEVICE = get_device()
 
 # directories
 DATA_DIR = 'data'
