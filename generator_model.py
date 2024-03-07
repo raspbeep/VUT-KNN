@@ -30,7 +30,7 @@ class ResidualBlock(nn.Module):
     
 class Generator(nn.Module):
     # num_residuals =9 if 256**2 or larger, =6 if 128 or smaller
-    def __init__(self, img_channels, num_features=64, num_residuals=9):
+    def __init__(self, img_channels, num_features=64, num_residuals=6):
         super().__init__()
         # input (B, C, img_size, img_size)
         # output (B, 9, img_size, img_size), 9=num features, number of output channels the convolution produces
@@ -45,15 +45,15 @@ class Generator(nn.Module):
         self.down_blocks = nn.ModuleList(
             [
                 ConvBlock(num_features, num_features*2, kernel_size=3, stride=2, padding=1),
-                ConvBlock(num_features*2, num_features*4, kernel_size=3, stride=2, padding=1),
+                # ConvBlock(num_features*2, num_features*4, kernel_size=3, stride=2, padding=1),
             ]
         )
         self.residual_blocks = nn.Sequential(
-            *[ResidualBlock(num_features * 4) for _ in range(num_residuals)]
+            *[ResidualBlock(num_features * 2) for _ in range(num_residuals)]
         )
         self.up_blocks = nn.ModuleList(
             [
-                ConvBlock(num_features*4, num_features*2, down=False, kernel_size=3, stride=2, padding=1, output_padding=1),
+                # ConvBlock(num_features*4, num_features*2, down=False, kernel_size=3, stride=2, padding=1, output_padding=1),
                 ConvBlock(num_features*2, num_features*1, down=False, kernel_size=3, stride=2, padding=1, output_padding=1)
             ]
         )

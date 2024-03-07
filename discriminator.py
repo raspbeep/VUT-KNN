@@ -18,7 +18,7 @@ class Block(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, in_channels=3, features=[64, 128, 256, 512]):
+    def __init__(self, in_channels=3, features=[64, 128, 256]):
         super().__init__()
         self.initial = nn.Sequential(
             nn.Conv2d(in_channels, out_channels=features[0], kernel_size=KERNEL_SIZE, stride=2, padding=1, padding_mode='reflect'),

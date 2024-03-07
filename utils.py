@@ -5,6 +5,10 @@ import torch.nn as nn
 
 import config
 
+def create_dir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 
 def save_to_checkpoint(epoch, gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, filename=config.CHECKPOINT_ALL):
     print(f'=> saving checkpoint at epoch {epoch}')

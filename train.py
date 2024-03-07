@@ -11,7 +11,7 @@ import config
 from dataset import Class1Class2Dataset
 from discriminator import Discriminator
 from generator_model import Generator
-from utils import load_from_checkpoint, save_to_checkpoint
+from utils import load_from_checkpoint, save_to_checkpoint, create_dir
 
 
 def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch, save_path):
@@ -99,6 +99,8 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
 
 
 def main(save_path=None):
+    create_dir('saved_images')
+
     disc_c1 = Discriminator(in_channels=3).to(config.DEVICE)
     disc_c2 = Discriminator(in_channels=3).to(config.DEVICE)
     gen_c2 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
