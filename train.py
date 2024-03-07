@@ -11,7 +11,7 @@ import config
 from dataset import Class1Class2Dataset
 from discriminator import Discriminator
 from generator_model import Generator
-from utils import load_checkpoint, save_checkpoint
+from utils import load_from_checkpoint, save_to_checkpoint
 
 
 def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch, save_path):
@@ -23,7 +23,7 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
 
     for idx, (c1, c2) in enumerate(loop):
         c1 = c1.to(config.DEVICE)
-        c2 = c2.to(config.DEVICE)        
+        c2 = c2.to(config.DEVICE)
 
         # Train Discriminators H and Z
         with torch.cuda.amp.autocast():
@@ -65,10 +65,10 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
             cycle_c1_loss = l1(c1, cycle_c1)
 
             # identity loss (remove these for efficiency if you set lambda_identity=0)
-            identity_c2 = gen_c2(c2)
-            identity_c1 = gen_c1(c1)
-            identity_c2_loss = l1(c2, identity_c2)
-            identity_c1_loss = l1(c1, identity_c1)
+            # identity_c2 = gen_c2(c2)
+            # identity_c1 = gen_c1(c1)
+            # identity_c2_loss = l1(c2, identity_c2)
+            # identity_c1_loss = l1(c1, identity_c1)
 
             # add all togethor
             G_loss = (
@@ -76,8 +76,8 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
                 + gen_c1_loss
                 + cycle_c1_loss * config.LAMBDA_CYCLES
                 + cycle_c2_loss * config.LAMBDA_CYCLES
-                + identity_c1_loss * config.LAMBDA_IDENTITY
-                + identity_c2_loss * config.LAMBDA_IDENTITY
+                # + identity_c1_loss * config.LAMBDA_IDENTITY
+                # + identity_c2_loss * config.LAMBDA_IDENTITY
             )
 
         opt_gen.zero_grad()
@@ -119,30 +119,13 @@ def main(save_path=None):
     mse = nn.MSELoss()
 
     if config.LOAD_MODEL:
-        load_checkpoint(
-            config.CHECKPOINT_GEN_C1,
-            gen_c1,
-            opt_gen,
-            config.LEARNING_RATE,
-        )
-        load_checkpoint(
-            config.CHECKPOINT_GEN_C1,
-            gen_c2,
-            opt_gen,
-            config.LEARNING_RATE,
-        )
-        load_checkpoint(
-            config.CHECKPOINT_DISC_C1,
-            disc_c1,
-            opt_disc,
-            config.LEARNING_RATE,
-        )
-        load_checkpoint(
-            config.CHECKPOINT_DISC_C2,
-            disc_c2,
-            opt_disc,
-            config.LEARNING_RATE,
-        )
+        epoch = load_from_checkpoint(gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, config.LEARNING_RATE)
+        if epoch is None:
+            epoch = 0
+        else:
+            print(f'Resuming from checkpoint {epoch}')
+    else:
+        epoch = 0
 
     dataset = Class1Class2Dataset(
         root_c1=config.C1_TRAIN_DIR,
@@ -170,7 +153,7 @@ def main(save_path=None):
     g_scaler = torch.cuda.amp.GradScaler()
     d_scaler = torch.cuda.amp.GradScaler()
 
-    for epoch in range(config.NUM_EPOCHS):
+    while epoch != config.NUM_EPOCHS:
         print(f'[EPOCH {epoch}]')
         train_fn(
             disc_c1,
@@ -189,11 +172,13 @@ def main(save_path=None):
         )
 
         if config.SAVE_MODEL:
-            save_checkpoint(gen_c1, opt_gen, filename=config.CHECKPOINT_GEN_C1)
-            save_checkpoint(gen_c2, opt_gen, filename=config.CHECKPOINT_GEN_C1)
-            save_checkpoint(disc_c1, opt_disc, filename=config.CHECKPOINT_DISC_C1)
-            save_checkpoint(disc_c2, opt_disc, filename=config.CHECKPOINT_DISC_C2)
+            # save_checkpoint(gen_c1, opt_gen, filename=config.CHECKPOINT_GEN_C1)
+            # save_checkpoint(gen_c2, opt_gen, filename=config.CHECKPOINT_GEN_C1)
+            # save_checkpoint(disc_c1, opt_disc, filename=config.CHECKPOINT_DISC_C1)
+            # save_checkpoint(disc_c2, opt_disc, filename=config.CHECKPOINT_DISC_C2)
+            save_to_checkpoint(epoch, gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc)
 
+        epoch += 1
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CGAN Training Script")
