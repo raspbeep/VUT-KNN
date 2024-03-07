@@ -43,11 +43,11 @@ class Class1Class2Dataset(Dataset):
         class2_path = os.path.join(self.root_c2, class2_img)
 
         if config.ADD_WHITE_BACKGROUND:
-            class1_img = np.array(Image.open(class1_path)).convert('RGB')
-            class2_img = np.array(Image.open(class2_path)).convert('RGB')
+            class1_img = np.array(add_white_background(Image.open(class1_path))).convert('RGB')
+            class2_img = np.array(add_white_background(Image.open(class2_path))).convert('RGB')
         else:
-            class1_img = np.array(Image.open(class1_path)).convert('RGB')
-            class2_img = np.array(Image.open(class2_path)).convert('RGB')
+            class1_img = np.array(Image.open(class1_path).convert('RGB'))
+            class2_img = np.array(Image.open(class2_path).convert('RGB'))
 
         if self.transform:
             augmentations = self.transform(image=class1_img, image0=class2_img)
