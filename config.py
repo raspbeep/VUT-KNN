@@ -1,25 +1,32 @@
+import os
+
 import torch
 import albumentations as a
 from albumentations.pytorch import ToTensorV2
 
-printed = False
 
 def get_device():
-    global printed
+    filename = 'device'
+
+    if os.path.isfile(filename):
+        with open(filename, 'r') as file:
+            device = file.read().strip()
+            if device in ['cuda', 'cpu', 'mps']:
+                return device
+
     if torch.cuda.is_available():
-        if not printed:
-            print('[USING CUDA]')
-        printed = True
-        return 'cuda'
-    if torch.backends.mps.is_available():
-        if not printed:
-            print('[USING MPS]')
-        printed = True
-        return 'mps'
-    if not printed:
-        print('[USING CPU]')
-    printed = True
-    return 'cpu'
+        device = 'cuda'
+    elif torch.backends.mps.is_available():
+        device = 'mps'
+    else:
+        device = 'cpu'
+
+    # Save the device type to the file
+    with open(filename, 'w') as file:
+        print(f'[USING {device}]')
+        file.write(device)
+
+    return device
 
 DEVICE = get_device()
 
@@ -34,18 +41,15 @@ C2_VAL_DIR = f'{VAL_DIR}/class2'
 
 # values from the paper
 BATCH_SIZE = 1
-LEARNING_RATE = 1e-5
-LAMBDA_IDENTITY = 0.0
+LEARNING_RATE = 2e-4
 LAMBDA_CYCLES = 10
-NUM_WORKERS = 6
+LAMBDA_IDENTITY = 0.5 * LAMBDA_CYCLES
+NUM_WORKERS = 2
 NUM_EPOCHS = 200
-LOAD_MODEL = False
+LOAD_MODEL = True
 SAVE_MODEL = True
 
-CHECKPOINT_GEN_C1 = 'gen1.pth.tar'
-CHECKPOINT_GEN_C2 = 'gen2.pth.tar'
-CHECKPOINT_DISC_C2 = 'critic1.pth.tar'
-CHECKPOINT_DISC_C1 = 'critic2.pth.tar'
+CHECKPOINT_ALL='checkpoint.pth.tar'
 
 transforms = a.Compose(
     [
