@@ -37,11 +37,17 @@ class Class1Class2Dataset(Dataset):
     def __getitem__(self, index):
         class1_img = self.class1_images[index % self.class1_len]
         class1_path = os.path.join(self.root_c1, class1_img)
-        class1_img = np.array(add_white_background(Image.open(class1_path)).convert('RGB'))
+        
         
         class2_img = self.class2_images[index % self.class2_len]
         class2_path = os.path.join(self.root_c2, class2_img)
-        class2_img = np.array(add_white_background(Image.open(class2_path)).convert('RGB'))
+
+        if config.ADD_WHITE_BACKGROUND:
+            class1_img = np.array(Image.open(class1_path)).convert('RGB')
+            class2_img = np.array(Image.open(class2_path)).convert('RGB')
+        else:
+            class1_img = np.array(Image.open(class1_path)).convert('RGB')
+            class2_img = np.array(Image.open(class2_path)).convert('RGB')
 
         if self.transform:
             augmentations = self.transform(image=class1_img, image0=class2_img)

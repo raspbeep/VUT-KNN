@@ -49,6 +49,10 @@ NUM_EPOCHS = 200
 LOAD_MODEL = True
 SAVE_MODEL = True
 
+# maybe useful for transparent images in dataset
+# slaps it on white background, transparent one is not representable in RGB
+ADD_WHITE_BACKGROUND=False
+
 CHECKPOINT_ALL='checkpoint.pth.tar'
 
 transforms = a.Compose(
