@@ -1,9 +1,6 @@
-saved_images/
-saved_images/
-
-saved_images/
-saved_images/
-
 data/
-
 device
+checkpoint*
+saved_images/
+__pycache__/
+

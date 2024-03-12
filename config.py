@@ -65,3 +65,12 @@ transforms = a.Compose(
     additional_targets={'image0': 'image'}
 )
 
+val_transforms = a.Compose(
+    [
+        a.Resize(width=256, height=256),
+        a.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], max_pixel_value=255),
+        ToTensorV2(),
+],
+    additional_targets={'image0': 'image'}
+)
+
