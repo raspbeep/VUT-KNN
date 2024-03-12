@@ -58,6 +58,17 @@ class Generator(nn.Module):
             ]
         )
         self.last = nn.Conv2d(num_features*1, img_channels, kernel_size=7, stride=1, padding=3, padding_mode='reflect')
+        self.initial.apply(self.init_weights)
+        self.down_blocks.apply(self.init_weights)
+        self.residual_blocks.apply(self.init_weights)
+        self.up_blocks.apply(self.init_weights)
+
+    @staticmethod
+    def init_weights(m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.normal_(m.weight, mean=0., std=0.02)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0.)
 
     def forward(self, x):
         x = self.initial(x)
