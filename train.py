@@ -42,7 +42,7 @@ def train_fn(disc_c1: Discriminator, disc_c2: Discriminator,
 
             fake_c2 = gen_c2(c1)
             disc_c2_real = disc_c2(c2)
-            disc_c2_fake = disc_c2(fake_c2.detach())
+            disc_c2_fake = disc_c2(pool_c2.use(fake_c2.detach()))
             disc_c2_real_loss = mse(disc_c2_real, torch.ones_like(disc_c2_real))
             disc_c2_fake_loss = mse(disc_c2_fake, torch.zeros_like(disc_c2_fake))
             disc_c2_loss = disc_c2_real_loss + disc_c2_fake_loss
