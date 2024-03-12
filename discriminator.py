@@ -4,37 +4,36 @@ import torch.nn as nn
 KERNEL_SIZE = 4
 PADDING = 1
 
-class Block(nn.Module):
-    def __init__(self, in_channels, out_channels, stride):
-        super().__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=KERNEL_SIZE, stride=stride, padding=PADDING, bias=True, padding_mode='reflect'),
-            nn.InstanceNorm2d(out_channels),
-            nn.LeakyReLU(0.2, inplace=True)
-        )
-    
-    def forward(self, x):
-        return self.conv(x)
-
-
 class Discriminator(nn.Module):
     def __init__(self, in_channels=3, features=[64, 128, 256, 512]):
         super().__init__()
-        self.initial = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels=features[0], kernel_size=KERNEL_SIZE, stride=2, padding=1, padding_mode='reflect'),
-            nn.LeakyReLU(0.2, inplace=True),
-        )
 
-        layers = []
+        self.seq = [
+            nn.Conv2d(in_channels, out_channels=features[0], kernel_size=KERNEL_SIZE, stride=2, padding=1, padding_mode='reflect'),
+            nn.LeakyReLU(0.2, inplace=True)
+        ]
+
         in_channels = features[0]
         for feature in features[1:]:
-            layers.append(Block(in_channels, out_channels=feature, stride=1 if feature == features[-1] else 2))
+            # self.seq.append(Block(in_channels, out_channels=feature, stride=1 if feature == features[-1] else 2))
+            self.seq.append(nn.Conv2d(in_channels, out_channels=feature, kernel_size=KERNEL_SIZE, stride=1 if feature == features[-1] else 2, padding=PADDING, bias=True, padding_mode='reflect'))
+            self.seq.append(nn.InstanceNorm2d(feature))
+            self.seq.append(nn.LeakyReLU(0.2, inplace=True))
             in_channels = feature
-        layers.append(nn.Conv2d(in_channels, out_channels=1, kernel_size=KERNEL_SIZE, stride=1, padding=1, padding_mode='reflect'))
-        self.model = nn.Sequential(*layers)
+        self.seq.append(nn.Conv2d(in_channels, out_channels=1, kernel_size=KERNEL_SIZE, stride=1, padding=1, padding_mode='reflect'))
+
+        self.model: nn.Sequential = nn.Sequential(*self.seq)
+        # Apply the initialization
+        self.model.apply(self.init_weights)
+
+    @staticmethod
+    def init_weights(m):
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+            nn.init.normal_(m.weight, mean=0., std=0.02)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0.)
 
     def forward(self, x):
-        x = self.initial(x)
         return torch.sigmoid(self.model(x))
     
 def test():

@@ -11,10 +11,14 @@ import config
 from dataset import Class1Class2Dataset
 from discriminator import Discriminator
 from generator_model import Generator
+from image_pool import ImagePool
 from utils import load_from_checkpoint, save_to_checkpoint
 
 
-def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch, save_path):
+def train_fn(disc_c1: Discriminator, disc_c2: Discriminator,
+             gen_c1: Generator, gen_c2: Generator,
+             pool_c1: ImagePool, pool_c2: ImagePool,
+             loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch, save_path):
     H_reals = 0
     H_fakes = 0
     loop = tqdm(loader, leave=True)
@@ -29,7 +33,7 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
         with torch.cuda.amp.autocast():
             fake_c1 = gen_c1(c2)
             disc_c1_real = disc_c1(c1)
-            disc_c1_fake = disc_c1(fake_c1.detach())
+            disc_c1_fake = disc_c1(pool_c1.use(fake_c1.detach()))
             H_reals += disc_c1_real.mean().item()
             H_fakes += disc_c1_fake.mean().item()
             disc_c1_real_loss = mse(disc_c1_real, torch.ones_like(disc_c1_real))
@@ -103,6 +107,9 @@ def main(save_path=None):
     disc_c2 = Discriminator(in_channels=3).to(config.DEVICE)
     gen_c2 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
     gen_c1 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
+    pool_c1 = ImagePool(config.IMAGE_BUFFER_CAP)
+    pool_c2 = ImagePool(config.IMAGE_BUFFER_CAP)
+
     opt_disc = optim.Adam(
         list(disc_c1.parameters()) + list(disc_c2.parameters()),
         lr=config.LEARNING_RATE,
@@ -160,6 +167,8 @@ def main(save_path=None):
             disc_c2,
             gen_c1,
             gen_c2,
+            pool_c1,
+            pool_c2, 
             loader,
             opt_disc,
             opt_gen,
