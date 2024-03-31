@@ -15,18 +15,19 @@ Source:
 
 2. CUFS (CUHK Face Sketch Database) dataset
 Description:
-- This dataset includes 188 faces from the Chinese University of Hong Kong (CUHK) student database, 
-  123 faces from the AR database, and 295 faces from the XM2VTS database, totalinf\g 606 faces. 
-  Each face includes a sketch drawn by an artist based on a photo taken in a frontal pose, 
-  under normal lighting condition and with a neutral expression.
+- This dataset contains sketches of 188 faces from the Chinese University of Hong Kong (CUHK) 
+  student database, 123 faces from the AR database, and 295 faces from the XM2VTS database, 
+  totaling 606 faces. The sketches are drawn by an artist based on photographs taken in a frontal
+  pose, under normal lighting conditions, and with a neutral expression. Additionally, 
+  the dataset includes 188 real faces of the students, resulting in 188 paired images of faces
+  and their corresponding sketches. The remaining 1194 images consist solely of sketches without
+  paired face images.
 This dataset was used in: 
 - Face Photo-Sketch Synthesis and Recognition (https://ieeexplore.ieee.org/document/4624272)
 - High-Quality Facial Photo-Sketch Synthesis Using Multi-Adversarial Networks 
   (https://arxiv.org/pdf/1710.10182.pdf)
 Source: 
-- http://mmlab.ie.cuhk.edu.hk/archive/cufsf/index.html#Downloads
 - https://www.kaggle.com/datasets/arbazkhan971/cuhk-face-sketch-database-cufs
-- https://paperswithcode.com/dataset/cufs
 
 
 3. CelebA dataset
