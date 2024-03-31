@@ -1,0 +1,41 @@
+References
+
+1. Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks
+- ZHU, Jun-Yan, et al. Unpaired image-to-image translation using cycle-consistent adversarial networks. In: Proceedings of the IEEE international conference on computer vision. 2017. p. 2223-2232.
+- Available at: https://doi.org/10.48550/arXiv.1703.10593
+
+2. U-GAT-IT: Unsupervised Generative Attentional Networks with Adaptive Layer-Instance Normalization for Image-to-Image Translation
+- KIM, Junho, et al. U-gat-it: Unsupervised generative attentional networks with adaptive layer-instance normalization for image-to-image translation. arXiv preprint arXiv:1907.10830, 2019.
+- Available at: https://doi.org/10.48550/arXiv.1907.10830
+
+3. Face sketch to photo translation using generative adversarial networks
+- FARID, Nastaran Moradzadeh; FARD, Maryam Saeedi; NICKABADI, Ahmad. Face sketch to photo translation using generative adversarial networks. arXiv preprint arXiv:2110.12290, 2021.
+- Available at: https://doi.org/10.48550/arXiv.2110.12290
+
+4. Facial attribute-controlled sketch-to-image translation with generative adversarial networks
+- Hu, M., Guo, J. Facial attribute-controlled sketch-to-image translation with generative adversarial networks. J Image Video Proc. 2020, 2 (2020). 
+- Available at: https://doi.org/10.1186/s13640-020-0489-5
+
+5. Face Photo-Sketch Synthesis and Recognition
+- X. Wang and X. Tang, "Face Photo-Sketch Synthesis and Recognition," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 31, no. 11, pp. 1955-1967, Nov. 2009, doi: 10.1109/TPAMI.2008.222.
+- Available at: https://ieeexplore.ieee.org/document/4624272
+
+6. High-Quality Facial Photo-Sketch Synthesis Using Multi-Adversarial Networks
+- WANG, Lidan; SINDAGI, Vishwanath; PATEL, Vishal. High-quality facial photo-sketch synthesis using multi-adversarial networks. In: 2018 13th IEEE international conference on automatic face & gesture recognition (FG 2018). IEEE, 2018. p. 83-90.
+- Available at: https://doi.org/10.48550/arXiv.1710.1018
+
+7. Improved Techniques for Training GANs
+- SALIMANS, Tim, et al. Improved techniques for training gans. Advances in neural information processing systems, 2016, 29.
+- Available at: https://arxiv.org/pdf/1606.03498.pdf
+
+8. A Residual Dense Generative Adversarial Network For Pansharpening With Geometrical Constraints
+- A. GASTINEAU, J. -F. AUJOL, Y. BERTHOUMIEU and C. GERMAIN, "A Residual Dense Generative Adversarial Network For Pansharpening With Geometrical Constraints," 2020 IEEE International Conference on Image Processing (ICIP), Abu Dhabi, United Arab Emirates, 2020, pp. 493-497, doi: 10.1109/ICIP40778.2020.9191230.
+- Available at: https://ieeexplore.ieee.org/document/9191230
+
+9. Sketch to Image Using Generative Adversarial Networks (GAN)
+- Ramy, Ahmed & Barakat, Prof & Barakat, Nahla. (2022). Sketch to Image Using Generative Adversarial Networks (GAN). 10.13140/RG.2.2.16797.38889. 
+- Available at: http://dx.doi.org/10.13140/RG.2.2.16797.38889
+
+10. The Sketchy Database: Learning to Retrieve Badly Drawn Bunnies
+- Sangkloy, Patsorn & Burnell, Nathan & Ham, Cusuh & Hays, James. (2016). The sketchy database: learning to retrieve badly drawn bunnies. ACM Transactions on Graphics. 35. 1-12. 10.1145/2897824.2925954. 
+- Available at: https://faculty.cc.gatech.edu/~hays/tmp/sketchy-database.pdf
