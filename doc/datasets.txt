@@ -1,0 +1,71 @@
+Datasets Used for Sketch-to-Face Unpaired Image-to-Image Translation
+
+1. Selfie2anime Dataset
+Description: 
+- The selfie dataset contains 3400 female selfie images for training and 100 images for validation, 
+  with the image size of 256 x 256. The anime dataset contains 3400 female character images 
+  for training and 100 images for validation, with the dimesions of 256 x 256. The anime images are 
+  sourced from Anime-Planet1.
+This dataset was used in: 
+- U-GAT-IT: Unsupervised Generative Attentional Networks with Adaptive Layer-Instance Normalization 
+  for Image-to-Image Translation (https://doi.org/10.48550/arXiv.1907.10830)
+Source: 
+- https://drive.google.com/file/d/1xOWj1UVgp6NKMT3HbPhBbtq2A4EDkghF/view
+
+
+2. CUFS (CUHK Face Sketch Database) dataset
+Description:
+- This dataset includes 188 faces from the Chinese University of Hong Kong (CUHK) student database, 
+  123 faces from the AR database, and 295 faces from the XM2VTS database, totalinf\g 606 faces. 
+  Each face includes a sketch drawn by an artist based on a photo taken in a frontal pose, 
+  under normal lighting condition and with a neutral expression.
+This dataset was used in: 
+- Face Photo-Sketch Synthesis and Recognition (https://ieeexplore.ieee.org/document/4624272)
+- High-Quality Facial Photo-Sketch Synthesis Using Multi-Adversarial Networks 
+  (https://arxiv.org/pdf/1710.10182.pdf)
+Source: 
+- http://mmlab.ie.cuhk.edu.hk/archive/cufsf/index.html#Downloads
+- https://www.kaggle.com/datasets/arbazkhan971/cuhk-face-sketch-database-cufs
+- https://paperswithcode.com/dataset/cufs
+
+
+3. CelebA dataset
+Description: 
+- The CelebA dataset consists of more than 200K celebrity images, each with 40 attribute 
+annotations. The images in this dataset cover large pose variations and background clutter.
+This dataset was used in: 
+- Facial attribute-controlled sketch-to-image translation with generative adversarial 
+  networks (https://doi.org/10.1186/s13640-020-0489-5)
+Source: 
+- https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html
+
+
+5. horse2zebra dataset 
+Description: 
+- The horse2zebra dataset consists of 1187 horse and 1474 zebra images.
+This dataset was used in: 
+- Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks
+  (https://doi.org/10.48550/arXiv.1703.10593)
+Source: 
+- https://www.kaggle.com/datasets/balraj98/horse2zebra-dataset
+
+
+6. cat2dog dataset 
+Description: 
+- The dataset includes 871 images of cat faces and 1364 images of dog faces.
+This dataset was used in: 
+- U-GAT-IT: Unsupervised Generative Attentional Networks with Adaptive Layer-Instance 
+  Normalization for Image-to-Image Translation (https://doi.org/10.48550/arXiv.1907.10830)
+Source: 
+- https://www.kaggle.com/datasets/waifuai/cat2dog
+
+
+7. Sketchy database 
+Description: 
+- The dataset contains sketch-photo pairs. There are 75,471 sketches of 12,500 real 
+  images spanning various domains, especially animals, plants, and everyday objects.
+This dataset was used in: 
+- The Sketchy Database: Learning to Retrieve Badly Drawn Bunnies 
+  (https://faculty.cc.gatech.edu/~hays/tmp/sketchy-database.pdf)
+Source: 
+- https://drive.google.com/file/d/0B7ISyeE8QtDdTjE1MG9Gcy1kSkE/view?resourcekey=0-r6nB4crmdU-LK7H38xnOUw
