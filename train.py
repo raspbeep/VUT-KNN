@@ -21,6 +21,7 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
 
     print('saving to: ', save_path)
 
+
     for idx, (c1, c2) in enumerate(loop):
         c1 = c1.to(config.DEVICE)
         c2 = c2.to(config.DEVICE)
@@ -114,8 +115,10 @@ def main(save_path=None, data_path=None):
         lr=config.LEARNING_RATE,
         betas=(0.5, 0.999),
     )
-
+    
+    # Loss function for cycle-consistency 
     L1 = nn.L1Loss()
+    # Loss function for generators/discriminators
     mse = nn.MSELoss()
 
     if config.LOAD_MODEL:
