@@ -187,5 +187,4 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    main(save_path=args.save)
-    main(data_path=args.data)
+    main(save_path=args.save, data_path=args.data)
