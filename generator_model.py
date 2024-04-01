@@ -2,13 +2,41 @@ import torch
 import torch.nn as nn
 
 
+# Self-attention mechanism is usually used in parallel with convolutional layers
+#   and concatenated before the last layer  
+# In this approach the self attention is used after each concolution by using 1x1 
+#   conv kernels 
+# Inspiration: https://github.com/leaderj1001/Attention-Augmented-Conv2d/blob/master/attention_augmented_conv.py
+class AttentionBlock(nn.Module):
+
+
+    def __init__(self, in_channels, out_channels, down=True, use_act=True, **kwargs):
+        super().__init__()
+        
+        # Nh != 0 -> Nh is divider cannot be 0 
+        # dk % Nh == 0 -> dk should be divided by Nh        
+        # dv % Nh == 0 -> dk should be divided by Nh 
+        self.dk = 40
+        self.dv = 4 
+        delf.Nh = 4
+
+        # TODO inst norm and relu should be applied after the attention 
+
+
+
+
+
+        # TODO maybe consider self.relative mechanism 
+
+
 class ConvBlock(nn.Module):
     # kwargs - kernel size, stride, padding
+    # down -- if True -> then downsampling is done 
     def __init__(self, in_channels, out_channels, down=True, use_act=True, **kwargs):
         super().__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, padding_mode='reflect', **kwargs)
-            if down
+            if down # 
             # gradient of Conv2d when upsampling
             else nn.ConvTranspose2d(in_channels, out_channels, **kwargs),
             nn.InstanceNorm2d(out_channels),
@@ -42,6 +70,7 @@ class Generator(nn.Module):
         # input (B, 9, img_size, img_size)
         # output1 (B, 9*2, img_size/2, img_size/2) = (B, 18, 128, 128)
         # output1 (B, 9*4, img_size/4, img_size/4) = (B, 36, 64, 64)
+        # Stride 2 is utilizing the pooling 
         self.down_blocks = nn.ModuleList(
             [
                 ConvBlock(num_features, num_features*2, kernel_size=3, stride=2, padding=1),
@@ -66,6 +95,7 @@ class Generator(nn.Module):
         x = self.residual_blocks(x)
         for layer in self.up_blocks:
             x = layer(x)
+        # tanh ensures that the pixels are in range [-1,1]
         return torch.tanh(self.last(x))
 
 def test():
