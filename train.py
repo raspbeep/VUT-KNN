@@ -98,7 +98,7 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
         loop.set_postfix(H_real=H_reals / (idx + 1), H_fake=H_fakes / (idx + 1))
 
 
-def main(save_path=None):
+def main(save_path=None, data_path=None):
     disc_c1 = Discriminator(in_channels=3).to(config.DEVICE)
     disc_c2 = Discriminator(in_channels=3).to(config.DEVICE)
     gen_c2 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
@@ -128,13 +128,13 @@ def main(save_path=None):
         epoch = 0
 
     dataset = Class1Class2Dataset(
-        root_c1=config.C1_TRAIN_DIR,
-        root_c2=config.C2_TRAIN_DIR,
+        root_c1=f'{data_path}/{config.C1_TRAIN_DIR}',
+        root_c2=f'{data_path}/{config.C2_TRAIN_DIR}',
         transform=config.transforms,
     )
     val_dataset = Class1Class2Dataset(
-        root_c1=config.C1_VAL_DIR,
-        root_c2=config.C2_VAL_DIR,
+        root_c1=f'{data_path}/{config.C1_VAL_DIR}',
+        root_c2=f'{data_path}/{config.C2_VAL_DIR}',
         transform=config.transforms,
     )
     # val_loader = DataLoader(
@@ -183,8 +183,9 @@ def main(save_path=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CGAN Training Script")
     parser.add_argument('--save', type=str, default='./saved_images',)
+    parser.add_argument('--data', type=str, default='./data',)    
     
     args = parser.parse_args()
     
     main(save_path=args.save)
-
+    main(data_path=args.data)

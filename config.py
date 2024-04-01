@@ -31,9 +31,8 @@ def get_device():
 DEVICE = get_device()
 
 # directories
-DATA_DIR = 'data'
-TRAIN_DIR = f'{DATA_DIR}/train'
-VAL_DIR = f'{DATA_DIR}/val'
+TRAIN_DIR = 'train'
+VAL_DIR = 'val'
 C1_TRAIN_DIR = f'{TRAIN_DIR}/class1'
 C2_TRAIN_DIR = f'{TRAIN_DIR}/class2'
 C1_VAL_DIR = f'{VAL_DIR}/class1'
