@@ -28,7 +28,7 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
 
         # Train Discriminators H and Z
         with torch.cuda.amp.autocast():
-            fake_c1 = gen_c1(c2)
+            fake_c1, a = gen_c1(c2)
             disc_c1_real = disc_c1(c1)
             disc_c1_fake = disc_c1(fake_c1.detach())
             H_reals += disc_c1_real.mean().item()
@@ -37,7 +37,7 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
             disc_c1_fake_loss = mse(disc_c1_fake, torch.zeros_like(disc_c1_fake))
             disc_c1_loss = disc_c1_real_loss + disc_c1_fake_loss
 
-            fake_c2 = gen_c2(c1)
+            fake_c2, a = gen_c2(c1)
             disc_c2_real = disc_c2(c2)
             disc_c2_fake = disc_c2(fake_c2.detach())
             disc_c2_real_loss = mse(disc_c2_real, torch.ones_like(disc_c2_real))
@@ -109,9 +109,16 @@ def main(save_path=None, data_path=None):
         lr=config.LEARNING_RATE,
         betas=(0.5, 0.999),
     )
+    
+    # Get parameters from gen_c1 and gen_c2
+    gen_c1_params = list(gen_c1.parameters())
+    gen_c2_params = list(gen_c2.parameters())
+
+    # Flatten the list of parameters
+    flattened_params = gen_c1_params + gen_c2_params
 
     opt_gen = optim.Adam(
-        list(gen_c2.parameters()) + list(gen_c1.parameters()),
+        flattened_params,
         lr=config.LEARNING_RATE,
         betas=(0.5, 0.999),
     )

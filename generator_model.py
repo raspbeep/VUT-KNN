@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 # Self-attention mechanism is usually used in parallel with convolutional layers
 #   and concatenated before the last layer  
 # In this approach the self attention is used after each concolution by using 1x1 
@@ -10,72 +9,36 @@ import torch.nn.functional as F
 # Inspiration: https://github.com/leaderj1001/Attention-Augmented-Conv2d/blob/master/attention_augmented_conv.py
 class AttentionBlock(nn.Module):
     
-    
-    def __init__(self, in_channels, out_channels, kernel_size, dk, dv, Nh, stride=1, use_act=True):
+
+    def __init__(self, in_channels, activation):
         super(AttentionBlock, self).__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.dk = dk
-        self.dv = dv
-        self.Nh = Nh
-        self.stride = stride
-        self.padding = 1
-
-        assert self.Nh != 0, "integer division or modulo by zero, Nh >= 1"
-        assert self.dk % self.Nh == 0, "dk should be divided by Nh. (example: out_channels: 20, dk: 40, Nh: 4)"
-        assert self.dv % self.Nh == 0, "dv should be divided by Nh. (example: out_channels: 20, dv: 4, Nh: 4)"
-        assert stride in [1, 2], str(stride) + " Up to 2 strides are allowed."
-
-        self.activation = nn.ReLU(inplace=True) if use_act else nn.Identity()
-        self.normalize  = nn.InstanceNorm1d(out_channels)
-
+        self.activation = activation
         
-
-        self.conv = nn.Sequential(
-            nn.Conv2d(self.in_channels,self.in_channels, kernel_size=1, padding_mode='reflect', stride=1),
-            nn.ReLU(inplace=True) if use_act else nn.Identity(),
-            nn.Conv2d(self.in_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding),
-            nn.InstanceNorm2d(out_channels),
-            nn.ReLU(inplace=True) if use_act else nn.Identity()
-        )
-
-        self.qkv_conv = nn.Conv2d(self.in_channels, 2 * self.dk + self.dv, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding)
-        self.attn_out = nn.Conv2d(self.dv, self.dv, kernel_size=1, stride=1)
+        self.query_conv = nn.Conv2d(in_channels, in_channels//8 , kernel_size= 1)
+        self.key_conv = nn.Conv2d(in_channels, in_channels//8 , kernel_size= 1)
+        self.value_conv = nn.Conv2d(in_channels , in_channels, kernel_size= 1)
+        self.gamma = nn.Parameter(torch.zeros(1))
+        self.softmax  = nn.Softmax(dim=-1) #
 
     def forward(self, x):
-        # Input x
-        # (batch_size, channels, height, width)
-        # batch, _, height, width = x.size()
+        # inputs :
+        #     x : input feature maps( B X C X W X H)
+        # returns :
+        #     out : self attention value + input feature 
+        #     attention: B X N X N (N is Width*Height)
+        m_batchsize,C,width ,height = x.size()
+        proj_query  = self.query_conv(x).view(m_batchsize,-1,width*height).permute(0,2,1) # B X CX(N)
+        proj_key =  self.key_conv(x).view(m_batchsize,-1,width*height) # B X C x (*W*H)
+        energy =  torch.bmm(proj_query,proj_key) # transpose check
+        attention = self.softmax(energy) # BX (N) X (N) 
+        proj_value = self.value_conv(x).view(m_batchsize,-1,width*height) # B X C X N
 
-        # conv_out
-        # (batch_size, out_channels, height, width)
-        return self.conv(x)
-        # batch, _, height, width = conv_out.size()
-
-        # # flat_q, flat_k, flat_v
-        # # (batch_size, Nh, height * width, dvh or dkh)
-        # # dvh = dv / Nh, dkh = dk / Nh
-        # # q, k, v
-        # # (batch_size, Nh, height, width, dv or dk)
-        # flat_q, flat_k, flat_v, q, k, v = self.compute_flat_qkv(x, self.dk, self.dv, self.Nh)
-        # logits = torch.matmul(flat_q.transpose(2, 3), flat_k)
-        # weights = F.softmax(logits, dim=-1)
-
-        # # attn_out
-        # # (batch, Nh, height * width, dvh)
-        # attn_out = torch.matmul(weights, flat_v.transpose(2, 3))
-        # attn_out = torch.reshape(attn_out, (batch, self.Nh, self.dv // self.Nh, height, width))
-        # # combine_heads_2d
-        # # (batch, out_channels, height, width)
-        # attn_out = self.combine_heads_2d(attn_out)
-        # attn_out = self.attn_out(attn_out)
-
-        # combine = torch.cat((conv_out, attn_out), dim=1)
-        # combine = self.normalize(combine)
-        # combine = self.activation(combine)
-
-        # return combine
+        out = torch.bmm(proj_value,attention.permute(0,2,1) )
+        out = out.view(m_batchsize,C,width,height)
+        
+        out = self.gamma*out + x
+        
+        return out,attention 
 
 
 class ConvBlock(nn.Module):
@@ -98,10 +61,8 @@ class ResidualBlock(nn.Module):
     def __init__(self, channels):
         super().__init__()
         self.block = nn.Sequential(
-            #ConvBlock(channels, channels, kernel_size=3, stride=1, padding=1),
-            #ConvBlock(channels, channels, use_act=False, kernel_size=3, stride=1, padding=1)
-            AttentionBlock(channels, channels, kernel_size=3, dk=40, dv=4, Nh=4, stride=1),
-            AttentionBlock(channels, channels, kernel_size=3, dk=40, dv=4, Nh=4, stride=1, use_act=False),
+            ConvBlock(channels, channels, kernel_size=3, stride=1, padding=1),
+            ConvBlock(channels, channels, use_act=False, kernel_size=3, stride=1, padding=1)
         )
     
     def forward(self, x):
@@ -124,11 +85,8 @@ class Generator(nn.Module):
         # Stride 2 is utilizing the pooling 
         self.down_blocks = nn.ModuleList(
             [
-                #ConvBlock(num_features, num_features*2, kernel_size=3, stride=2, padding=1),
-                #ConvBlock(num_features*2, num_features*4, kernel_size=3, stride=2, padding=1),
-                
-                AttentionBlock(num_features, num_features*2, kernel_size=3, dk=40, dv=4, Nh=4, stride=2),
-                AttentionBlock(num_features*2, num_features*4, kernel_size=3, dk=40, dv=4, Nh=4, stride=2),
+                ConvBlock(num_features, num_features*2, kernel_size=3, stride=2, padding=1),
+                ConvBlock(num_features*2, num_features*4, kernel_size=3, stride=2, padding=1),
             ]
         )
         self.residual_blocks = nn.Sequential(
@@ -138,21 +96,40 @@ class Generator(nn.Module):
             [
                 ConvBlock(num_features*4, num_features*2, down=False, kernel_size=3, stride=2, padding=1, output_padding=1),
                 ConvBlock(num_features*2, num_features*1, down=False, kernel_size=3, stride=2, padding=1, output_padding=1)
-                #AttentionBlock(num_features*4, num_features*2, kernel_size=3, dk=40, dv=4, Nh=4, stride=2),
-                #AttentionBlock(num_features*4, num_features*2, kernel_size=3, dk=40, dv=4, Nh=4, stride=2),
             ]
         )
         self.last = nn.Conv2d(num_features*1, img_channels, kernel_size=7, stride=1, padding=3, padding_mode='reflect')
+        self.attn1 = AttentionBlock(3, 'relu')
+        self.attn2 = AttentionBlock(6, 'relu')
+        self.attn3 = AttentionBlock(12, 'relu')
+        
+        self.attn11 = AttentionBlock(128, 'relu')
+        self.attn21 = AttentionBlock(64, 'relu')
 
     def forward(self, x):
+        
         x = self.initial(x)
-        for layer in self.down_blocks:
-            x = layer(x)
-        x = self.residual_blocks(x)
-        for layer in self.up_blocks:
-            x = layer(x)
-        # tanh ensures that the pixels are in range [-1,1]
-        return torch.tanh(self.last(x))
+        #x, p1 = self.attn1(x)
+        x = self.down_blocks[0](x)
+        #x, p2 = self.attn2(x)
+        x = self.down_blocks[1](x)
+        #x, p3 = self.attn3(x)
+
+        for block in self.residual_blocks:
+            x = block(x)
+        
+        x = self.up_blocks[0](x)
+        x = self.up_blocks[1](x)
+
+        #print(self.attn11)
+        #print(self.last)
+        #print(x.size())
+        x, p = self.attn21(x)
+        #print(x.size())
+        
+        return torch.tanh(self.last(x)), p
+        ## P can be returned and optimized 
+        #return torch.tanh(self.last(x)), p
 
 def test():
     img_channels = 3
