@@ -45,7 +45,7 @@ LAMBDA_CYCLES = 10
 LAMBDA_IDENTITY = 0.5 * LAMBDA_CYCLES
 NUM_WORKERS = 2
 NUM_EPOCHS = 200
-LOAD_MODEL = True
+LOAD_MODEL = False 
 SAVE_MODEL = True
 
 # maybe useful for transparent images in dataset
