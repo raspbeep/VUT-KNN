@@ -156,8 +156,11 @@ class ResidualBlock(nn.Module):
     def __init__(self, channels):
         super().__init__()
         self.block = nn.Sequential(
-            ConvBlock(channels, channels, kernel_size=3, stride=1, padding=1),
-            ConvBlock(channels, channels, use_act=False, kernel_size=3, stride=1, padding=1)
+            #ConvBlock(channels, channels, kernel_size=3, stride=1, padding=1),
+            #ConvBlock(channels, channels, use_act=False, kernel_size=3, stride=1, padding=1)
+            
+            AttentionBlock(channels, channels, kernel_size=3, stride=1, padding=1),
+            AttentionBlock(channels, channels, use_act=False, kernel_size=3, stride=1, padding=1)
         )
     
     def forward(self, x):
@@ -180,8 +183,11 @@ class Generator(nn.Module):
         # Stride 2 is utilizing the pooling 
         self.down_blocks = nn.ModuleList(
             [
-                ConvBlock(num_features, num_features*2, kernel_size=3, stride=2, padding=1),
-                ConvBlock(num_features*2, num_features*4, kernel_size=3, stride=2, padding=1),
+                #ConvBlock(num_features, num_features*2, kernel_size=3, stride=2, padding=1),
+                #ConvBlock(num_features*2, num_features*4, kernel_size=3, stride=2, padding=1),
+                
+                AttentionBlock(num_features, num_features*2, kernel_size=3, stride=2, padding=1),
+                AttentionBlock(num_features*2, num_features*4, kernel_size=3, stride=2, padding=1),
             ]
         )
         self.residual_blocks = nn.Sequential(
@@ -189,8 +195,10 @@ class Generator(nn.Module):
         )
         self.up_blocks = nn.ModuleList(
             [
-                ConvBlock(num_features*4, num_features*2, down=False, kernel_size=3, stride=2, padding=1, output_padding=1),
-                ConvBlock(num_features*2, num_features*1, down=False, kernel_size=3, stride=2, padding=1, output_padding=1)
+                #ConvBlock(num_features*4, num_features*2, down=False, kernel_size=3, stride=2, padding=1, output_padding=1),
+                #ConvBlock(num_features*2, num_features*1, down=False, kernel_size=3, stride=2, padding=1, output_padding=1)
+                AttentionBlock(num_features*4, num_features*2, down=False, kernel_size=3, stride=2, padding=1, output_padding=1),
+                AttentionBlock(num_features*2, num_features*1, down=False, kernel_size=3, stride=2, padding=1, output_padding=1)
             ]
         )
         self.last = nn.Conv2d(num_features*1, img_channels, kernel_size=7, stride=1, padding=3, padding_mode='reflect')
