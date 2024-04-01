@@ -25,23 +25,51 @@ class AttentionBlock(nn.Module):
         self.instance_norm  = nn.InstanceNorm2d(out_channels)
         self.activation     = nn.ReLU(inplace=True) if use_act else nn.Identity()
         
-
-
+        # querry key and value 
+        self.qkv_conv       = nn.Conv2d(in_channels, 2* self.dk + self.dv, **kwargs)
+        
+        # Attention itself is realized by using kernels of size one 
+        #  which will efectively extract important features 
+        self.attn_out = nn.Conv2d(self.dv, self.dv, kernel_size=1, stride=1)
 
         # TODO maybe consider self.relative mechanism 
 
 
     def forward(self, x):
-        # TODO inst norm and relu should be applied after the attention 
+        
+        # Output of the convolutional layer 
+        conv_out = self.conv(x)
+        batch, _, height, width = conv_out.size()
+        
+        # flat_q, flat_k, flat_v
+        # (batch_size, Nh, height * width, dvh or dkh)
+        # dvh = dv / Nh, dkh = dk / Nh
+        # q, k, v
+        # (batch_size, Nh, height, width, dv or dk)
+        flat_q, flat_k, flat_v, q, k, v = self.compute_flat_qkv(x, self.dk, self.dv, self.Nh)
+        logits = torch.matmul(flat_q.transpose(2, 3), flat_k)
+        
+        weights = F.softmax(logits, dim=-1)
+
+        # attn_out
+        # (batch, Nh, height * width, dvh)
+        attn_out = torch.matmul(weights, flat_v.transpose(2, 3))
+        attn_out = torch.reshape(attn_out, (batch, self.Nh, self.dv // self.Nh, height, width))
+        # combine_heads_2d
+        # (batch, out_channels, height, width)
+        attn_out = self.combine_heads_2d(attn_out)
+        attn_out = self.attn_out(attn_out)
+
+        # Finally concatenate convolution and attention 
+        combine = torch.cat((conv_out, attn_out), dim=1)
+
+        # do the normalization and activation as before 
+        combine = self.instance_norm(combine)
+        combine = self.activation(combine)
+
+        return combine
 
 
-        x = self.conv(x)
-        x = self.instance_norm(x)
-        x = self.activation(x)
-
-        pass
-    
-     
     def compute_flat_qkv(self, x, dk, dv, Nh):
         qkv = self.qkv_conv(x)
         N, _, H, W = qkv.size()
