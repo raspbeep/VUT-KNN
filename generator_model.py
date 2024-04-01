@@ -20,13 +20,92 @@ class AttentionBlock(nn.Module):
         self.dv = 4 
         delf.Nh = 4
 
-        # TODO inst norm and relu should be applied after the attention 
-
-
+        # Normal convolution of the conv block 
+        self.conv           = nn.Conv2d(in_channels, out_channels, padding_mode='reflect', **kwargs)
+        self.instance_norm  = nn.InstanceNorm2d(out_channels)
+        self.activation     = nn.ReLU(inplace=True) if use_act else nn.Identity()
+        
 
 
 
         # TODO maybe consider self.relative mechanism 
+
+
+    def forward(self, x):
+        # TODO inst norm and relu should be applied after the attention 
+
+
+        x = self.conv(x)
+        x = self.instance_norm(x)
+        x = self.activation(x)
+
+        pass
+    
+     
+    def compute_flat_qkv(self, x, dk, dv, Nh):
+        qkv = self.qkv_conv(x)
+        N, _, H, W = qkv.size()
+        q, k, v = torch.split(qkv, [dk, dk, dv], dim=1)
+        q = self.split_heads_2d(q, Nh)
+        k = self.split_heads_2d(k, Nh)
+        v = self.split_heads_2d(v, Nh)
+
+        dkh = dk // Nh
+        q *= dkh ** -0.5
+        flat_q = torch.reshape(q, (N, Nh, dk // Nh, H * W))
+        flat_k = torch.reshape(k, (N, Nh, dk // Nh, H * W))
+        flat_v = torch.reshape(v, (N, Nh, dv // Nh, H * W))
+        return flat_q, flat_k, flat_v, q, k, v
+
+    def split_heads_2d(self, x, Nh):
+        batch, channels, height, width = x.size()
+        ret_shape = (batch, Nh, channels // Nh, height, width)
+        split = torch.reshape(x, ret_shape)
+        return split
+
+    def combine_heads_2d(self, x):
+        batch, Nh, dv, H, W = x.size()
+        ret_shape = (batch, Nh * dv, H, W)
+        return torch.reshape(x, ret_shape)
+
+    def relative_logits(self, q):
+        B, Nh, dk, H, W = q.size()
+        q = torch.transpose(q, 2, 4).transpose(2, 3)
+
+        rel_logits_w = self.relative_logits_1d(q, self.key_rel_w, H, W, Nh, "w")
+        rel_logits_h = self.relative_logits_1d(torch.transpose(q, 2, 3), self.key_rel_h, W, H, Nh, "h")
+
+        return rel_logits_h, rel_logits_w
+
+    def relative_logits_1d(self, q, rel_k, H, W, Nh, case):
+        rel_logits = torch.einsum('bhxyd,md->bhxym', q, rel_k)
+        rel_logits = torch.reshape(rel_logits, (-1, Nh * H, W, 2 * W - 1))
+        rel_logits = self.rel_to_abs(rel_logits)
+
+        rel_logits = torch.reshape(rel_logits, (-1, Nh, H, W, W))
+        rel_logits = torch.unsqueeze(rel_logits, dim=3)
+        rel_logits = rel_logits.repeat((1, 1, 1, H, 1, 1))
+
+        if case == "w":
+            rel_logits = torch.transpose(rel_logits, 3, 4)
+        elif case == "h":
+            rel_logits = torch.transpose(rel_logits, 2, 4).transpose(4, 5).transpose(3, 5)
+        rel_logits = torch.reshape(rel_logits, (-1, Nh, H * W, H * W))
+        return rel_logits
+
+    def rel_to_abs(self, x):
+        B, Nh, L, _ = x.size()
+
+        col_pad = torch.zeros((B, Nh, L, 1)).to(x)
+        x = torch.cat((x, col_pad), dim=3)
+
+        flat_x = torch.reshape(x, (B, Nh, L * 2 * L))
+        flat_pad = torch.zeros((B, Nh, L - 1)).to(x)
+        flat_x_padded = torch.cat((flat_x, flat_pad), dim=2)
+
+        final_x = torch.reshape(flat_x_padded, (B, Nh, L + 1, 2 * L - 1))
+        final_x = final_x[:, :, :L, L - 1:]
+        return final_x
 
 
 class ConvBlock(nn.Module):
