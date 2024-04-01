@@ -98,7 +98,7 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
         loop.set_postfix(H_real=H_reals / (idx + 1), H_fake=H_fakes / (idx + 1))
 
 
-def main(save_path=None, data_path=None):
+def main(save_path, data_path, num_epochs):
     disc_c1 = Discriminator(in_channels=3).to(config.DEVICE)
     disc_c2 = Discriminator(in_channels=3).to(config.DEVICE)
     gen_c2 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
@@ -153,8 +153,8 @@ def main(save_path=None, data_path=None):
     g_scaler = torch.cuda.amp.GradScaler()
     d_scaler = torch.cuda.amp.GradScaler()
 
-    while epoch != config.NUM_EPOCHS:
-        print(f'[EPOCH {epoch}]')
+    while epoch != num_epochs:
+        print(f'[EPOCH {epoch}/{num_epochs}]')
         train_fn(
             disc_c1,
             disc_c2,
@@ -184,7 +184,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CGAN Training Script")
     parser.add_argument('--save', type=str, default='./saved_images',)
     parser.add_argument('--data', type=str, default='./data',)    
+    parser.add_argument('--epochs', type=int, default=config.NUM_EPOCHS,)    
     
     args = parser.parse_args()
     
-    main(save_path=args.save, data_path=args.data)
+    main(save_path=args.save, data_path=args.data, num_epochs=args.epochs)
