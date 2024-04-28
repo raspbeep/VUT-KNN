@@ -10,7 +10,7 @@
 # number of epochs:
 NUMBER_OF_EPOCHS=100
 # git branch name
-BRANCH_NAME=main
+BRANCH_NAME=discriminator-change
 # homedir:
 HOMEDIR=/storage/brno2/home/$PBS_O_LOGNAME
 # dataset (pick one):
