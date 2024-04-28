@@ -15,15 +15,6 @@ import torchvision.models as models
 # Define a pre-trained VGG model
 vgg_model = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features.eval()
 
-# Define your feature extraction function
-def extract_features(x, model, layer_names):
-    features = []
-    for name, layer in model._modules.items():
-        x = layer(x.type(torch.FloatTensor))  # Convert input tensor to FloatTensor
-        if name in layer_names:
-            features.append(x)
-    return features
-
 # Calculate the feature loss
 def feature_loss(x1, x2):
     loss = 0
@@ -48,11 +39,11 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
             fake_c1 = gen_c1(c2)
             fake_c2 = gen_c2(c1)
 
-            # Extract features from VGG model
-            real_features_c1 = extract_features(c1, vgg_model, ['conv1_2', 'conv2_2', 'conv3_3'])
-            fake_features_c1 = extract_features(fake_c1, vgg_model, ['conv1_2', 'conv2_2', 'conv3_3'])
-            real_features_c2 = extract_features(c2, vgg_model, ['conv1_2', 'conv2_2', 'conv3_3'])
-            fake_features_c2 = extract_features(fake_c2, vgg_model, ['conv1_2', 'conv2_2', 'conv3_3'])
+             # Feature Matching VGG
+            real_features_c1 = disc_c1(c1)
+            fake_features_c1 = disc_c1(fake_c1.detach())
+            real_features_c2 = disc_c2(c2)
+            fake_features_c2 = disc_c2(fake_c2.detach())
 
             # Compute feature loss
             feature_matching_loss_c1 = feature_loss(real_features_c1, fake_features_c1)
@@ -60,7 +51,7 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
             disc_loss = (feature_matching_loss_c1 + feature_matching_loss_c2) / 2
 
         opt_disc.zero_grad()
-        d_scaler.scale(disc_loss) #.backward()
+        d_scaler.scale(disc_loss).backward()
         d_scaler.step(opt_disc)
         d_scaler.update()
 
@@ -140,6 +131,11 @@ def main(save_path, data_path, num_epochs):
     dataset = Class1Class2Dataset(
         root_c1=f'{data_path}/{config.C1_TRAIN_DIR}',
         root_c2=f'{data_path}/{config.C2_TRAIN_DIR}',
+        transform=config.transforms,
+    )
+    val_dataset = Class1Class2Dataset(
+        root_c1=f'{data_path}/{config.C1_VAL_DIR}',
+        root_c2=f'{data_path}/{config.C2_VAL_DIR}',
         transform=config.transforms,
     )
     loader = DataLoader(
