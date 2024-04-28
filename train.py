@@ -15,16 +15,14 @@ import torchvision.models as models
 # Define a pre-trained VGG model
 vgg_model = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features.eval()
 
-
 # Define your feature extraction function
 def extract_features(x, model, layer_names):
     features = []
     for name, layer in model._modules.items():
-        x = layer(x)
+        x = layer(x.type(torch.FloatTensor))  # Convert input tensor to FloatTensor
         if name in layer_names:
             features.append(x)
     return features
-
 
 # Calculate the feature loss
 def feature_loss(x1, x2):
