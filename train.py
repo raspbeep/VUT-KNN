@@ -114,15 +114,16 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
         g_scaler.step(opt_gen)
         g_scaler.update()
 
-        if idx % 10 == 0:
-            # reals horse
-            save_image(c1 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_c1_real.png')
-            # reals zebra
-            save_image(c2 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_c2_real.png')
-            # fakes zebra
-            save_image(fake_c1 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_h(c2).png')
-            # fakes horse
-            save_image(fake_c2 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_g(c1).png')
+        if epoch % 5 == 0:
+            if idx % 50 == 0:
+                # reals horse
+                save_image(c1 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_c1_real.png')
+                # reals zebra
+                save_image(c2 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_c2_real.png')
+                # fakes zebra
+                save_image(fake_c1 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_h(c2).png')
+                # fakes horse
+                save_image(fake_c2 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_g(c1).png')
 
         loop.set_postfix(H_real=H_reals / (idx + 1), H_fake=H_fakes / (idx + 1))
 
