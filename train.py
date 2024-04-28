@@ -29,22 +29,50 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
         # Train Discriminators H and Z
         with torch.cuda.amp.autocast():
             fake_c1 = gen_c1(c2)
-            disc_c1_real = disc_c1(c1)
-            disc_c1_fake = disc_c1(fake_c1.detach())
-            H_reals += disc_c1_real.mean().item()
-            H_fakes += disc_c1_fake.mean().item()
-            disc_c1_real_loss = mse(disc_c1_real, torch.ones_like(disc_c1_real))
-            disc_c1_fake_loss = mse(disc_c1_fake, torch.zeros_like(disc_c1_fake))
-            disc_c1_loss = disc_c1_real_loss + disc_c1_fake_loss
+            # disc_c1_real = disc_c1(c1)
+            # disc_c1_fake = disc_c1(fake_c1.detach())
+            # H_reals += disc_c1_real.mean().item()
+            # H_fakes += disc_c1_fake.mean().item()
+            # disc_c1_real_loss = mse(disc_c1_real, torch.ones_like(disc_c1_real))
+            # disc_c1_fake_loss = mse(disc_c1_fake, torch.zeros_like(disc_c1_fake))
+            # disc_c1_loss = disc_c1_real_loss + disc_c1_fake_loss
 
             fake_c2 = gen_c2(c1)
-            disc_c2_real = disc_c2(c2)
-            disc_c2_fake = disc_c2(fake_c2.detach())
-            disc_c2_real_loss = mse(disc_c2_real, torch.ones_like(disc_c2_real))
-            disc_c2_fake_loss = mse(disc_c2_fake, torch.zeros_like(disc_c2_fake))
+            # disc_c2_real = disc_c2(c2)
+            # disc_c2_fake = disc_c2(fake_c2.detach())
+            # disc_c2_real_loss = mse(disc_c2_real, torch.ones_like(disc_c2_real))
+            # disc_c2_fake_loss = mse(disc_c2_fake, torch.zeros_like(disc_c2_fake))
+            # disc_c2_loss = disc_c2_real_loss + disc_c2_fake_loss
+
+            # disc_loss = (disc_c1_loss + disc_c2_loss) / 2
+
+            # Feature Matching VGG
+            real_features_c1 = disc_c1(c1)
+            fake_features_c1 = disc_c1(fake_c1.detach())
+            real_features_c2 = disc_c2(c2)
+            fake_features_c2 = disc_c2(fake_c2.detach())
+
+
+            # fake_c1 = gen_c1(c2)
+            # disc_c1_real = disc_c1(c1)
+            # disc_c1_fake = disc_c1(fake_c1.detach())
+            # H_reals += real_features_c1.mean().item()
+            # H_fakes += fake_features_c1.mean().item()
+            disc_c1_real_loss = mse(real_features_c1, torch.ones_like(real_features_c1))
+            disc_c1_fake_loss = mse(fake_features_c1, torch.zeros_like(fake_features_c1))
+            disc_c1_loss = disc_c1_real_loss + disc_c1_fake_loss
+
+            # fake_c2 = gen_c2(c1)
+            # disc_c2_real = disc_c2(c2)
+            # disc_c2_fake = disc_c2(fake_c2.detach())
+            disc_c2_real_loss = mse(real_features_c2, torch.ones_like(real_features_c2))
+            disc_c2_fake_loss = mse(fake_features_c2, torch.zeros_like(fake_features_c2))
             disc_c2_loss = disc_c2_real_loss + disc_c2_fake_loss
 
-            disc_loss = (disc_c1_loss + disc_c2_loss) / 2
+            # Compute feature matching loss
+            feature_matching_loss_c1 = mse(real_features_c1, fake_features_c1)
+            feature_matching_loss_c2 = mse(real_features_c2, fake_features_c2)
+            disc_loss = (disc_c1_loss + disc_c2_loss) / 2 + (feature_matching_loss_c1 + feature_matching_loss_c2) / 2
 
         opt_disc.zero_grad()
         d_scaler.scale(disc_loss).backward()
@@ -100,10 +128,20 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
 
 
 def main(save_path, data_path, num_epochs):
-    disc_c1 = Discriminator(in_channels=3).to(config.DEVICE)
-    disc_c2 = Discriminator(in_channels=3).to(config.DEVICE)
+    # original (PatchGAN)
+    # disc_c1 = Discriminator(in_channels=3).to(config.DEVICE)
+    # disc_c2 = Discriminator(in_channels=3).to(config.DEVICE)
+    # VGG
+    disc_c1 = Discriminator().to(config.DEVICE)
+    disc_c2 = Discriminator().to(config.DEVICE)
     gen_c2 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
     gen_c1 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
+
+    # print("disc_c1")
+    # print(disc_c1)
+    # print("gen_c1")
+    # print(gen_c1)
+
     opt_disc = optim.Adam(
         list(disc_c1.parameters()) + list(disc_c2.parameters()),
         lr=config.LEARNING_RATE,
@@ -117,9 +155,12 @@ def main(save_path, data_path, num_epochs):
     )
     
     # Loss function for cycle-consistency 
-    L1 = nn.L1Loss()
+    # L1 = nn.L1Loss()
+    L1 = nn.HuberLoss()
+
     # Loss function for generators/discriminators
     mse = nn.MSELoss()
+    # mse = nn.BCEWithLogitsLoss
 
     if config.LOAD_MODEL:
         epoch = load_from_checkpoint(gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, config.LEARNING_RATE)
