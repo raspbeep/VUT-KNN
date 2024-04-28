@@ -1,26 +1,45 @@
 import argparse
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision.utils import save_image
 from tqdm import tqdm
-
 import config
 from dataset import Class1Class2Dataset
 from discriminator import Discriminator
 from generator_model import Generator
 from utils import load_from_checkpoint, save_to_checkpoint
+import torchvision.models as models
+
+# Define a pre-trained VGG model
+vgg_model = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features.eval()
 
 
-def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch, save_path):
+# Define your feature extraction function
+def extract_features(x, model, layer_names):
+    features = []
+    for name, layer in model._modules.items():
+        x = layer(x)
+        if name in layer_names:
+            features.append(x)
+    return features
+
+
+# Calculate the feature loss
+def feature_loss(x1, x2):
+    loss = 0
+    for f1, f2 in zip(x1, x2):
+        loss += torch.mean(torch.abs(f1 - f2))
+    return loss
+
+
+def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch,
+             save_path):
     H_reals = 0
     H_fakes = 0
     loop = tqdm(loader, leave=True)
-
     print('saving to: ', save_path)
-
 
     for idx, (c1, c2) in enumerate(loop):
         c1 = c1.to(config.DEVICE)
@@ -31,39 +50,19 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
             fake_c1 = gen_c1(c2)
             fake_c2 = gen_c2(c1)
 
-            # # Feature Matching VGG
-            # real_features_c1 = disc_c1(c1)
-            # fake_features_c1 = disc_c1(fake_c1.detach())
-            # real_features_c2 = disc_c2(c2)
-            # fake_features_c2 = disc_c2(fake_c2.detach())
+            # Extract features from VGG model
+            real_features_c1 = extract_features(c1, vgg_model, ['conv1_2', 'conv2_2', 'conv3_3'])
+            fake_features_c1 = extract_features(fake_c1, vgg_model, ['conv1_2', 'conv2_2', 'conv3_3'])
+            real_features_c2 = extract_features(c2, vgg_model, ['conv1_2', 'conv2_2', 'conv3_3'])
+            fake_features_c2 = extract_features(fake_c2, vgg_model, ['conv1_2', 'conv2_2', 'conv3_3'])
 
-            # disc_c1_real_loss = mse(real_features_c1, torch.ones_like(real_features_c1))
-            # disc_c1_fake_loss = mse(fake_features_c1, torch.zeros_like(fake_features_c1))
-            # disc_c1_loss = disc_c1_real_loss + disc_c1_fake_loss
-
-            # disc_c2_real_loss = mse(real_features_c2, torch.ones_like(real_features_c2))
-            # disc_c2_fake_loss = mse(fake_features_c2, torch.zeros_like(fake_features_c2))
-            # disc_c2_loss = disc_c2_real_loss + disc_c2_fake_loss
-
-            # # Compute feature matching loss
-            # feature_matching_loss_c1 = mse(real_features_c1, fake_features_c1)
-            # feature_matching_loss_c2 = mse(real_features_c2, fake_features_c2)
-            # disc_loss = (disc_c1_loss + disc_c2_loss) / 2 + (feature_matching_loss_c1 + feature_matching_loss_c2) / 2
-
-
-            # Forward pass through the ViT discriminators
-            real_features_c1 = disc_c1(c1)
-            fake_features_c1 = disc_c1(fake_c1.detach())
-            real_features_c2 = disc_c2(c2)
-            fake_features_c2 = disc_c2(fake_c2.detach())
-            # Compute feature matching loss
-            feature_matching_loss_c1 = mse(real_features_c1, fake_features_c1)
-            feature_matching_loss_c2 = mse(real_features_c2, fake_features_c2)
+            # Compute feature loss
+            feature_matching_loss_c1 = feature_loss(real_features_c1, fake_features_c1)
+            feature_matching_loss_c2 = feature_loss(real_features_c2, fake_features_c2)
             disc_loss = (feature_matching_loss_c1 + feature_matching_loss_c2) / 2
 
-
         opt_disc.zero_grad()
-        d_scaler.scale(disc_loss).backward()
+        d_scaler.scale(disc_loss) #.backward()
         d_scaler.step(opt_disc)
         d_scaler.update()
 
@@ -81,20 +80,12 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
             cycle_c2_loss = l1(c2, cycle_c2)
             cycle_c1_loss = l1(c1, cycle_c1)
 
-            # identity loss (remove these for efficiency if you set lambda_identity=0)
-            # identity_c2 = gen_c2(c2)
-            # identity_c1 = gen_c1(c1)
-            # identity_c2_loss = l1(c2, identity_c2)
-            # identity_c1_loss = l1(c1, identity_c1)
-
-            # add all togethor
+            # add all together
             G_loss = (
-                gen_c2_loss
-                + gen_c1_loss
-                + cycle_c1_loss * config.LAMBDA_CYCLES
-                + cycle_c2_loss * config.LAMBDA_CYCLES
-                # + identity_c1_loss * config.LAMBDA_IDENTITY
-                # + identity_c2_loss * config.LAMBDA_IDENTITY
+                    gen_c2_loss
+                    + gen_c1_loss
+                    + cycle_c1_loss * config.LAMBDA_CYCLES
+                    + cycle_c2_loss * config.LAMBDA_CYCLES
             )
 
         opt_gen.zero_grad()
@@ -117,19 +108,10 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
 
 
 def main(save_path, data_path, num_epochs):
-    # original (PatchGAN)
-    # disc_c1 = Discriminator(in_channels=3).to(config.DEVICE)
-    # disc_c2 = Discriminator(in_channels=3).to(config.DEVICE)
-    # VGG
     disc_c1 = Discriminator().to(config.DEVICE)
     disc_c2 = Discriminator().to(config.DEVICE)
     gen_c2 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
     gen_c1 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
-
-    # print("disc_c1")
-    # print(disc_c1)
-    # print("gen_c1")
-    # print(gen_c1)
 
     opt_disc = optim.Adam(
         list(disc_c1.parameters()) + list(disc_c2.parameters()),
@@ -142,14 +124,11 @@ def main(save_path, data_path, num_epochs):
         lr=config.LEARNING_RATE,
         betas=(0.5, 0.999),
     )
-    
-    # Loss function for cycle-consistency 
-    # L1 = nn.L1Loss()
+
     L1 = nn.HuberLoss()
 
     # Loss function for generators/discriminators
     mse = nn.MSELoss()
-    # mse = nn.BCEWithLogitsLoss
 
     if config.LOAD_MODEL:
         epoch = load_from_checkpoint(gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, config.LEARNING_RATE)
@@ -165,17 +144,6 @@ def main(save_path, data_path, num_epochs):
         root_c2=f'{data_path}/{config.C2_TRAIN_DIR}',
         transform=config.transforms,
     )
-    val_dataset = Class1Class2Dataset(
-        root_c1=f'{data_path}/{config.C1_VAL_DIR}',
-        root_c2=f'{data_path}/{config.C2_VAL_DIR}',
-        transform=config.transforms,
-    )
-    # val_loader = DataLoader(
-    #     val_dataset,
-    #     batch_size=1,
-    #     shuffle=False,
-    #     pin_memory=True,
-    # )
     loader = DataLoader(
         dataset,
         batch_size=config.BATCH_SIZE,
@@ -205,16 +173,12 @@ def main(save_path, data_path, num_epochs):
         )
 
         if config.SAVE_MODEL:
-            # save_checkpoint(gen_c1, opt_gen, filename=config.CHECKPOINT_GEN_C1)
-            # save_checkpoint(gen_c2, opt_gen, filename=config.CHECKPOINT_GEN_C1)
-            # save_checkpoint(disc_c1, opt_disc, filename=config.CHECKPOINT_DISC_C1)
-            # save_checkpoint(disc_c2, opt_disc, filename=config.CHECKPOINT_DISC_C2)
             save_to_checkpoint(epoch, gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc)
 
         epoch += 1
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="CGAN Training Script")
+    parser = argparse.ArgumentParser(description="CycleGAN Training Script")
     parser.add_argument('--save', type=str, default='./saved_images',)
     parser.add_argument('--data', type=str, default='./data',)    
     parser.add_argument('--epochs', type=int, default=config.NUM_EPOCHS,)    

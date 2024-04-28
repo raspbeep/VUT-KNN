@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
-import torchvision.transforms as transforms
 
 KERNEL_SIZE = 4
 PADDING = 1
@@ -9,18 +8,16 @@ PADDING = 1
 class Discriminator(nn.Module):
     def __init__(self):
         super().__init__()
-        self.vit = models.vit_b_32(pretrained=True)
-
-        self.transform = transforms.Compose([
-            transforms.Resize((224, 224)),  # Resize images to 224x224
-        ])
-
+        # Load pre-trained VGG model (e.g., VGG16)
+        self.model = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features.eval()
+        # Choose which layers to use for feature extraction
+        self.layers = nn.Sequential(*list(self.model.children())[:4])  # Example: Use first 4 layers of VGG16
+    
     def forward(self, x):
-        # Resize input images
-        x = self.transform(x)
-        # Forward pass through the ViT model
-        x = self.vit(x)
-        return x
+        # Forward pass through the chosen layers of the pre-trained VGG model
+        features = self.layers(x)
+        # print(features)
+        return features
     
 def test():
     x = torch.randn((1,3,256,256))
