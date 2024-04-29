@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-KERNEL_SIZE = 3
+KERNEL_SIZE = 5
 PADDING = 1
 
 class Block(nn.Module):
