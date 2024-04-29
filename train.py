@@ -12,9 +12,6 @@ from generator_model import Generator
 from utils import load_from_checkpoint, save_to_checkpoint
 import torchvision.models as models
 
-# Define a pre-trained VGG model
-vgg_model = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features.eval()
-
 # Calculate the feature loss
 def feature_loss(x1, x2):
     loss = 0
