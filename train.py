@@ -185,7 +185,7 @@ def main(save_path, data_path, num_epochs):
             # save_checkpoint(gen_c2, opt_gen, filename=config.CHECKPOINT_GEN_C1)
             # save_checkpoint(disc_c1, opt_disc, filename=config.CHECKPOINT_DISC_C1)
             # save_checkpoint(disc_c2, opt_disc, filename=config.CHECKPOINT_DISC_C2)
-            save_to_checkpoint(epoch, gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc)
+            save_to_checkpoint(epoch, gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, pool_c1 pool_c2)
 
         epoch += 1
 
