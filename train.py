@@ -69,10 +69,10 @@ def train_fn(disc_c1: Discriminator, disc_c2: Discriminator,
             cycle_c1_loss = l1(c1, cycle_c1)
 
             # identity loss (remove these for efficiency if you set lambda_identity=0)
-            # identity_c2 = gen_c2(c2)
-            # identity_c1 = gen_c1(c1)
-            # identity_c2_loss = l1(c2, identity_c2)
-            # identity_c1_loss = l1(c1, identity_c1)
+            identity_c2 = gen_c2(c2)
+            identity_c1 = gen_c1(c1)
+            identity_c2_loss = l1(c2, identity_c2)
+            identity_c1_loss = l1(c1, identity_c1)
 
             # add all togethor
             G_loss = (
@@ -80,8 +80,8 @@ def train_fn(disc_c1: Discriminator, disc_c2: Discriminator,
                 + gen_c1_loss
                 + cycle_c1_loss * config.LAMBDA_CYCLES
                 + cycle_c2_loss * config.LAMBDA_CYCLES
-                # + identity_c1_loss * config.LAMBDA_IDENTITY
-                # + identity_c2_loss * config.LAMBDA_IDENTITY
+                + identity_c1_loss * config.LAMBDA_IDENTITY
+                + identity_c2_loss * config.LAMBDA_IDENTITY
             )
 
         opt_gen.zero_grad()
