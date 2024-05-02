@@ -2,6 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import matplotlib.pyplot as plt
+import numpy as np
+import random
+
 KERNEL_SIZE = 4
 PADDING = 1
 
@@ -25,14 +29,30 @@ class SelfAttention(nn.Module):
         self.value = nn.Conv2d(in_channels, in_channels, kernel_size=1)
         self.gamma = nn.Parameter(torch.zeros(1))
 
-    def forward(self, x):
+        self.print_freq = 100
+        self.print_cnt = 0
+
+    def forward(self, x, print_heatmap=True):
         batch_size, C, width, height = x.shape
         query = self.query(x).view(batch_size, -1, width*height).permute(0, 2, 1)
         key = self.key(x).view(batch_size, -1, width*height)
         attention = torch.bmm(query, key)
+
         attention = F.softmax(attention, dim=-1)
         value = self.value(x).view(batch_size, -1, width*height)
         out = torch.bmm(value, attention.permute(0, 2, 1)).view(batch_size, C, width, height)
+        
+        if print_heatmap:
+            if self.print_cnt % self.print_freq == 0:
+                out_cpu = out.cpu()
+                out_np = out_cpu.detach().numpy()
+                out_np = np.squeeze(out_np, axis=0)
+                out_np = np.mean(out_np, axis=0)
+                plt.imshow(out_np, cmap='hot', interpolation='nearest')
+                plt.savefig(f'./saved_heatmaps/attention_map_{self.print_cnt}_{random.randint(1,2**32)}.png')
+            self.print_cnt += 1
+
+
         out = self.gamma*out + x
         return out
 
