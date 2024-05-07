@@ -20,11 +20,11 @@ def feature_loss(x1, x2):
     return loss
 
 
-def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch,
-             save_path):
+def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, bce_loss, d_scaler, g_scaler, epoch, save_path):
     H_reals = 0
     H_fakes = 0
     loop = tqdm(loader, leave=True)
+
     print('saving to: ', save_path)
 
     for idx, (c1, c2) in enumerate(loop):
@@ -34,18 +34,22 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
         # Train Discriminators H and Z
         with torch.cuda.amp.autocast():
             fake_c1 = gen_c1(c2)
+            disc_c1_real = disc_c1(c1)
+            disc_c1_fake = disc_c1(fake_c1.detach())
+            H_reals += disc_c1_real.mean().item()
+            H_fakes += disc_c1_fake.mean().item()
+            disc_c1_real_loss = bce_loss(disc_c1_real, torch.ones_like(disc_c1_real))
+            disc_c1_fake_loss = bce_loss(disc_c1_fake, torch.zeros_like(disc_c1_fake))
+            disc_c1_loss = disc_c1_real_loss + disc_c1_fake_loss
+
             fake_c2 = gen_c2(c1)
+            disc_c2_real = disc_c2(c2)
+            disc_c2_fake = disc_c2(fake_c2.detach())
+            disc_c2_real_loss = bce_loss(disc_c2_real, torch.ones_like(disc_c2_real))
+            disc_c2_fake_loss = bce_loss(disc_c2_fake, torch.zeros_like(disc_c2_fake))
+            disc_c2_loss = disc_c2_real_loss + disc_c2_fake_loss
 
-             # Feature Matching VGG
-            real_features_c1 = disc_c1(c1)
-            fake_features_c1 = disc_c1(fake_c1.detach())
-            real_features_c2 = disc_c2(c2)
-            fake_features_c2 = disc_c2(fake_c2.detach())
-
-            # Compute feature loss
-            feature_matching_loss_c1 = feature_loss(real_features_c1, fake_features_c1)
-            feature_matching_loss_c2 = feature_loss(real_features_c2, fake_features_c2)
-            disc_loss = (feature_matching_loss_c1 + feature_matching_loss_c2) / 2
+            disc_loss = (disc_c1_loss + disc_c2_loss) / 2
 
         opt_disc.zero_grad()
         d_scaler.scale(disc_loss).backward()
@@ -57,8 +61,8 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
             # adversarial loss for both generators
             disc_c1_fake = disc_c1(fake_c1)
             disc_c2_fake = disc_c2(fake_c2)
-            gen_c1_loss = mse(disc_c1_fake, torch.ones_like(disc_c1_fake))
-            gen_c2_loss = mse(disc_c2_fake, torch.ones_like(disc_c2_fake))
+            gen_c1_loss = bce_loss(disc_c1_fake, torch.ones_like(disc_c1_fake))
+            gen_c2_loss = bce_loss(disc_c2_fake, torch.ones_like(disc_c2_fake))
 
             # cycle loss
             cycle_c2 = gen_c2(fake_c1)
@@ -68,10 +72,10 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
 
             # add all together
             G_loss = (
-                    gen_c2_loss
-                    + gen_c1_loss
-                    + cycle_c1_loss * config.LAMBDA_CYCLES
-                    + cycle_c2_loss * config.LAMBDA_CYCLES
+                gen_c2_loss
+                + gen_c1_loss
+                + cycle_c1_loss * config.LAMBDA_CYCLES
+                + cycle_c2_loss * config.LAMBDA_CYCLES
             )
 
         opt_gen.zero_grad()
@@ -79,16 +83,15 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
         g_scaler.step(opt_gen)
         g_scaler.update()
 
-        if epoch % 5 == 0:
-            if idx % 100 == 0:
-                # reals horse
-                save_image(c1 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_c1_real.png')
-                # reals zebra
-                save_image(c2 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_c2_real.png')
-                # fakes zebra
-                save_image(fake_c1 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_h(c2).png')
-                # fakes horse
-                save_image(fake_c2 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_g(c1).png')
+        if idx % 10 == 0:
+            # reals horse
+            save_image(c1 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_c1_real.png')
+            # reals zebra
+            save_image(c2 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_c2_real.png')
+            # fakes zebra
+            save_image(fake_c1 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_h(c2).png')
+            # fakes horse
+            save_image(fake_c2 * 0.5 + 0.5, save_path + f'/epoch_{epoch}_idx_{idx}_g(c1).png')
 
         loop.set_postfix(H_real=H_reals / (idx + 1), H_fake=H_fakes / (idx + 1))
 
@@ -111,7 +114,7 @@ def main(save_path, data_path, num_epochs):
         betas=(0.5, 0.999),
     )
 
-    L1 = nn.HuberLoss()
+    L1 = nn.L1Loss()
 
     # Loss function for generators/discriminators
     mse = nn.MSELoss()
