@@ -12,7 +12,8 @@ class ConvBlock(nn.Module):
             # gradient of Conv2d when upsampling
             else nn.ConvTranspose2d(in_channels, out_channels, **kwargs),
             nn.InstanceNorm2d(out_channels),
-            nn.ReLU(inplace=True) if use_act else nn.Identity()
+            nn.ReLU(inplace=True) if use_act else nn.Identity(),
+            nn.Dropout(0.5)
         )
     def forward(self, x):
         return self.conv(x)
