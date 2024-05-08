@@ -49,6 +49,7 @@ class SelfAttention(nn.Module):
                 out_np = np.squeeze(out_np, axis=0)
                 out_np = np.mean(out_np, axis=0)
                 plt.imshow(out_np, cmap='hot', interpolation='nearest')
+                plt.colorbar()
                 plt.savefig(f'../saved_heatmaps/attention_map_{self.print_cnt}_{random.randint(1,2**32)}.png')
             self.print_cnt += 1
 
