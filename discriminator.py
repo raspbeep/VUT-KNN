@@ -25,6 +25,9 @@ class SelfAttention(nn.Module):
         self.value = nn.Conv2d(in_channels, in_channels, kernel_size=1)
         self.gamma = nn.Parameter(torch.zeros(1))
 
+        self.print_freq = 100
+        self.print_cnt = 0
+
     def forward(self, x):
         batch_size, C, width, height = x.shape
         query = self.query(x).view(batch_size, -1, width*height).permute(0, 2, 1)
