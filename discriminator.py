@@ -10,8 +10,7 @@ class Block(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=KERNEL_SIZE, stride=stride, padding=PADDING, bias=True, padding_mode='reflect'),
             nn.InstanceNorm2d(out_channels),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Dropout(0.5)
+            nn.LeakyReLU(0.2, inplace=True)
         )
     
     def forward(self, x):
