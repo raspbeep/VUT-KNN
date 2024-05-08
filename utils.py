@@ -18,6 +18,10 @@ def save_to_checkpoint(epoch, gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_dis
         'discriminators' : {
             'disc_c1': disc_c1.state_dict(),
             'disc_c2': disc_c2.state_dict(),
+            'att_c1': disc_c1.attention.state_dict(),
+            'att_c1_cnt': disc_c1.attention.print_cnt,
+            'att_c2': disc_c2.attention.state_dict(),
+            'att_c2_cnt': disc_c2.attention.print_cnt,
             'opt_disc': opt_disc.state_dict(),
         },
         'pool_c1_buffer': pool_c1.buffer,
@@ -43,6 +47,13 @@ def load_from_checkpoint(gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, lr
 
     disc_c1.load_state_dict(checkpoint['discriminators']['disc_c1'])
     disc_c2.load_state_dict(checkpoint['discriminators']['disc_c2'])
+
+    disc_c1.attention.load_state_dict(checkpoint['discriminators']['att_c1'])
+    disc_c2.attention.load_state_dict(checkpoint['discriminators']['att_c2'])
+
+    disc_c1.attention.print_cnt = checkpoint['discriminators']['att_c1_cnt']
+    disc_c2.attention.print_cnt = checkpoint['discriminators']['att_c2_cnt']
+
     opt_disc.load_state_dict(checkpoint['discriminators']['opt_disc'])
 
     pool_c1.buffer = checkpoint['pool_c1_buffer']
