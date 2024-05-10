@@ -1,17 +1,17 @@
 # Sketch-to-Face Translation Using Cycle-Consistent GAN 
-### Brno University of Technology, FIT, Course: KNN
+### Brno University of Technology, Faculty of Information Technology, Course: KNN 2023/2024
 In this project, we utilized the base CGAN solution proposed by Jun-Yan et al. [1]. Additionally, we improved the baseline solution by incorporating the Self-Attention mechanism [2] and the Identity Loss function [3].
 
 ## Team 
-**Pavel Kratochvil** (xkrato61)  
-**Lucie Svobodova** (xsvobo1x)  
-**Jakub Kuznik** (xkuzni04)  
+**Pavel Kratochvíl** (xkrato61)  
+**Lucie Svobodová** (xsvobo1x)  
+**Jakub Kuzník** (xkuzni04)  
 
 ## Datasets 
 | Dataset  | Description |
 |----------|--------------|
-| [URLSketch2face](https://vutbr-my.sharepoint.com/:f:/g/personal/xsvobo1x_vutbr_cz/Eo0xnlq_sQdJle7S9pc3xBYB0pSw-w5M_i5VM7favWMc_A?e=t5edPI)  | Contains face sketches and images. |     
-| [Horse2zebra](https://www.kaggle.com/datasets/balraj98/horse2zebra-dataset) | Contains images of horses and zebras. | 
+| [sketch2face](https://vutbr-my.sharepoint.com/:f:/g/personal/xsvobo1x_vutbr_cz/Eo0xnlq_sQdJle7S9pc3xBYB0pSw-w5M_i5VM7favWMc_A?e=t5edPI)  | Contains face sketches and images. |     
+| [horse2zebra](https://www.kaggle.com/datasets/balraj98/horse2zebra-dataset) | Contains images of horses and zebras. | 
 
 ## Purpose of Files  
 | File        | Purpose |
@@ -34,7 +34,7 @@ In this project, we utilized the base CGAN solution proposed by Jun-Yan et al. [
 ```python3 forwardpass.py```
 
 ## Saved models  
-Saved models are aviable at: [models](https://vutbr-my.sharepoint.com/:f:/g/personal/xsvobo1x_vutbr_cz/EmT0auMzEz5HvfKHwumq6ssBxui7uz73oK0EKuHFd3byIg?e=nZ5wAh)
+Saved models are aviable at: [models](https://vutbr-my.sharepoint.com/:f:/g/personal/xsvobo1x_vutbr_cz/EmT0auMzEz5HvfKHwumq6ssBxui7uz73oK0EKuHFd3byIg?e=nZ5wAh).
 
 ## Sources 
 
