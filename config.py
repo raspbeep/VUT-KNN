@@ -4,7 +4,6 @@ import torch
 import albumentations as a
 from albumentations.pytorch import ToTensorV2
 
-
 def get_device():
     filename = 'device'
 

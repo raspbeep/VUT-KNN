@@ -37,7 +37,6 @@ def load_from_checkpoint(gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, lr
         return None
     
     checkpoint = torch.load(filename, map_location=config.DEVICE)
-    checkpoint = torch.load(filename)
 
     epoch = checkpoint['epoch']
 
@@ -48,11 +47,14 @@ def load_from_checkpoint(gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, lr
     disc_c1.load_state_dict(checkpoint['discriminators']['disc_c1'])
     disc_c2.load_state_dict(checkpoint['discriminators']['disc_c2'])
 
-    disc_c1.attention.load_state_dict(checkpoint['discriminators']['att_c1'])
-    disc_c2.attention.load_state_dict(checkpoint['discriminators']['att_c2'])
+    try:
+        disc_c1.attention.load_state_dict(checkpoint['discriminators']['att_c1'])
+        disc_c2.attention.load_state_dict(checkpoint['discriminators']['att_c2'])
 
-    disc_c1.attention.print_cnt = checkpoint['discriminators']['att_c1_cnt']
-    disc_c2.attention.print_cnt = checkpoint['discriminators']['att_c2_cnt']
+        disc_c1.attention.print_cnt = checkpoint['discriminators']['att_c1_cnt']
+        disc_c2.attention.print_cnt = checkpoint['discriminators']['att_c2_cnt']
+    except Exception:
+        pass
 
     opt_disc.load_state_dict(checkpoint['discriminators']['opt_disc'])
 
