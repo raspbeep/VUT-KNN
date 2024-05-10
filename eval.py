@@ -8,8 +8,8 @@ import config
 from dataset import Class1Class2Dataset
 from discriminator import Discriminator
 from generator_model import Generator
-from utils import load_from_checkpoint, save_to_checkpoint
-
+from image_pool import ImagePool
+from utils import load_from_checkpoint
 
 def val_fn(gen_c1, gen_c2, loader, epoch, save_path):
     loop = tqdm(loader, leave=True)
@@ -34,6 +34,9 @@ def main():
     disc_c2 = Discriminator(in_channels=3).to(config.DEVICE)
     gen_c2 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
     gen_c1 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
+    pool_c1 = ImagePool(config.IMAGE_BUFFER_CAP)
+    pool_c2 = ImagePool(config.IMAGE_BUFFER_CAP)
+
     opt_disc = optim.Adam(
         list(disc_c1.parameters()) + list(disc_c2.parameters()),
         lr=config.LEARNING_RATE,
@@ -47,7 +50,7 @@ def main():
     )
 
     if config.LOAD_MODEL:
-        epoch = load_from_checkpoint(gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, config.LEARNING_RATE)
+        epoch = load_from_checkpoint(gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, config.LEARNING_RATE, pool_c1, pool_c2)
         if epoch is None:
             epoch = 0
         else:
@@ -56,8 +59,8 @@ def main():
         epoch = 0
 
     val_dataset = Class1Class2Dataset(
-        root_c1=config.C1_VAL_DIR,
-        root_c2=config.C1_VAL_DIR,
+        root_c1='./data/' + config.C1_VAL_DIR,
+        root_c2='./data/' + config.C1_VAL_DIR,
         transform=config.val_transforms,
     )
 
@@ -73,7 +76,8 @@ def main():
         gen_c1,
         gen_c2,
         loader,
-        epoch
+        epoch,
+        './saved_images'
     )
 
 if __name__ == "__main__":

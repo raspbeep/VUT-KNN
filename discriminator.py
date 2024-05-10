@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 KERNEL_SIZE = 4
 PADDING = 1
@@ -16,6 +17,27 @@ class Block(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
+class SelfAttention(nn.Module):
+    def __init__(self, in_channels):
+        super().__init__()
+        self.query = nn.Conv2d(in_channels, in_channels//8, kernel_size=1)
+        self.key = nn.Conv2d(in_channels, in_channels//8, kernel_size=1)
+        self.value = nn.Conv2d(in_channels, in_channels, kernel_size=1)
+        self.gamma = nn.Parameter(torch.zeros(1))
+
+        self.print_freq = 100
+        self.print_cnt = 0
+
+    def forward(self, x):
+        batch_size, C, width, height = x.shape
+        query = self.query(x).view(batch_size, -1, width*height).permute(0, 2, 1)
+        key = self.key(x).view(batch_size, -1, width*height)
+        attention = torch.bmm(query, key)
+        attention = F.softmax(attention, dim=-1)
+        value = self.value(x).view(batch_size, -1, width*height)
+        out = torch.bmm(value, attention.permute(0, 2, 1)).view(batch_size, C, width, height)
+        out = self.gamma*out + x
+        return out
 
 class Discriminator(nn.Module):
     def __init__(self, in_channels=3, features=[64, 128, 256, 512]):
@@ -24,6 +46,7 @@ class Discriminator(nn.Module):
             nn.Conv2d(in_channels, out_channels=features[0], kernel_size=KERNEL_SIZE, stride=2, padding=1, padding_mode='reflect'),
             nn.LeakyReLU(0.2, inplace=True),
         )
+        self.attention = SelfAttention(features[0])
 
         layers = []
         in_channels = features[0]
@@ -35,6 +58,7 @@ class Discriminator(nn.Module):
 
     def forward(self, x):
         x = self.initial(x)
+        x = self.attention(x)
         return torch.sigmoid(self.model(x))
     
 def test():

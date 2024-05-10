@@ -11,10 +11,14 @@ import config
 from dataset import Class1Class2Dataset
 from discriminator import Discriminator
 from generator_model import Generator
+from image_pool import ImagePool
 from utils import load_from_checkpoint, save_to_checkpoint
 
 
-def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch, save_path):
+def train_fn(disc_c1: Discriminator, disc_c2: Discriminator,
+             gen_c1: Generator, gen_c2: Generator,
+             pool_c1: ImagePool, pool_c2: ImagePool,
+             loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epoch, save_path):
     H_reals = 0
     H_fakes = 0
     loop = tqdm(loader, leave=True)
@@ -65,10 +69,10 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
             cycle_c1_loss = l1(c1, cycle_c1)
 
             # identity loss (remove these for efficiency if you set lambda_identity=0)
-            # identity_c2 = gen_c2(c2)
-            # identity_c1 = gen_c1(c1)
-            # identity_c2_loss = l1(c2, identity_c2)
-            # identity_c1_loss = l1(c1, identity_c1)
+            identity_c2 = gen_c2(c2)
+            identity_c1 = gen_c1(c1)
+            identity_c2_loss = l1(c2, identity_c2)
+            identity_c1_loss = l1(c1, identity_c1)
 
             # add all togethor
             G_loss = (
@@ -76,8 +80,8 @@ def train_fn(disc_c1, disc_c2, gen_c1, gen_c2, loader, opt_disc, opt_gen, l1, ms
                 + gen_c1_loss
                 + cycle_c1_loss * config.LAMBDA_CYCLES
                 + cycle_c2_loss * config.LAMBDA_CYCLES
-                # + identity_c1_loss * config.LAMBDA_IDENTITY
-                # + identity_c2_loss * config.LAMBDA_IDENTITY
+                + identity_c1_loss * config.LAMBDA_IDENTITY
+                + identity_c2_loss * config.LAMBDA_IDENTITY
             )
 
         opt_gen.zero_grad()
@@ -103,6 +107,9 @@ def main(save_path, data_path, num_epochs):
     disc_c2 = Discriminator(in_channels=3).to(config.DEVICE)
     gen_c2 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
     gen_c1 = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
+    pool_c1 = ImagePool(config.IMAGE_BUFFER_CAP)
+    pool_c2 = ImagePool(config.IMAGE_BUFFER_CAP)
+
     opt_disc = optim.Adam(
         list(disc_c1.parameters()) + list(disc_c2.parameters()),
         lr=config.LEARNING_RATE,
@@ -119,7 +126,7 @@ def main(save_path, data_path, num_epochs):
     mse = nn.MSELoss()
 
     if config.LOAD_MODEL:
-        epoch = load_from_checkpoint(gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, config.LEARNING_RATE)
+        epoch = load_from_checkpoint(gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, config.LEARNING_RATE, pool_c1, pool_c2)
         if epoch is None:
             epoch = 0
         else:
@@ -160,6 +167,8 @@ def main(save_path, data_path, num_epochs):
             disc_c2,
             gen_c1,
             gen_c2,
+            pool_c1,
+            pool_c2,
             loader,
             opt_disc,
             opt_gen,
@@ -176,7 +185,7 @@ def main(save_path, data_path, num_epochs):
             # save_checkpoint(gen_c2, opt_gen, filename=config.CHECKPOINT_GEN_C1)
             # save_checkpoint(disc_c1, opt_disc, filename=config.CHECKPOINT_DISC_C1)
             # save_checkpoint(disc_c2, opt_disc, filename=config.CHECKPOINT_DISC_C2)
-            save_to_checkpoint(epoch, gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc)
+            save_to_checkpoint(epoch, gen_c1, gen_c2, opt_gen, disc_c1, disc_c2, opt_disc, pool_c1, pool_c2)
 
         epoch += 1
 
